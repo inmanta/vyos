@@ -1,0 +1,34 @@
+entity ConfigItem:
+    string config
+end
+
+entity Config extends ConfigItem, std::PurgeableResource:
+    string device
+    string node
+end
+
+index Config(device, node)
+
+Config.credential [1] -- Credential
+
+entity ExtraConfig extends ConfigItem:
+end
+
+implement ExtraConfig using std::none
+
+Config.extra [0:] -- ExtraConfig
+
+implementation configPrint for Config:
+    #std::print("{{device}}:{{node}} -> \ndelete {{node}}\n{{config}}\n#########")
+end
+
+implement Config using configPrint
+
+entity Credential:
+    string address
+    string user
+    string password
+    number port
+end
+
+implement Credential using std::none
