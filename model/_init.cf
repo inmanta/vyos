@@ -1,3 +1,5 @@
+import ip
+
 entity ConfigItem:
     string config
 end
@@ -5,6 +7,7 @@ end
 entity Config extends ConfigItem, std::PurgeableResource:
     string device
     string node
+    bool never_delete=false
 end
 
 index Config(device, node)
@@ -19,7 +22,6 @@ implement ExtraConfig using std::none
 Config.extra [0:] -- ExtraConfig
 
 implementation configPrint for Config:
-    #std::print("{{device}}:{{node}} -> \ndelete {{node}}\n{{config}}\n#########")
 end
 
 implement Config using configPrint
@@ -32,3 +34,112 @@ entity Credential:
 end
 
 implement Credential using std::none
+
+entity Host extends ip::Host:
+    """
+        A vyos (or derivative) based host.
+    """
+    string user="inmanta"
+    string password="inmanta"
+    number port=22
+end
+
+implementation vyosConfig for Host:
+    self.credential = vyos::Credential(address=self.ip, user=self.user,
+                                       password=self.password, port=self.port)
+end
+
+implement Host using std::hostDefaults, vyosConfig
+
+Host.credential [1] -- Credential
+
+entity ConfigNode:
+    string node_name
+end
+
+ConfigNode.host [1] -- Host
+ConfigNode.config [0:1] -- ConfigItem
+
+entity Masquerade extends ConfigNode:
+    string outbound_interface
+    string source_address
+    number rule
+end
+
+index Masquerade(host, rule)
+
+implement Masquerade using masq
+
+implementation masq for Masquerade:
+    self.node_name = "nat source rule {{ rule }}"
+    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
+                               config=std::template("vyos/masq.j2"))
+end
+
+entity Interface extends ConfigNode:
+    string name
+    ip::cidr address
+end
+
+index Interface(host, name)
+
+implementation iface for Interface:
+    self.node_name = "interfaces ethernet {{ name }}"
+    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
+                               config=std::template("vyos/interface.j2"))
+end
+
+implement Interface using iface
+
+entity DhcpServer extends ConfigNode:
+    string name
+    ip::cidr subnet
+    ip::ip default_router
+    ip::ip[] dns_servers
+    ip::ip range_start
+    ip::ip range_end
+end
+
+implementation dhcpServer for DhcpServer:
+    self.node_name = "service dhcp-server shared-network-name {{ name }} subnet {{ subnet }}"
+    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
+                               config=std::template("vyos/dhcp.j2"))  
+end
+
+implement DhcpServer using dhcpServer
+
+entity StaticRoute extends ConfigNode:
+    ip::cidr destination
+    ip::ip next_hop
+    number table=0
+end
+
+implementation staticRouteDefault for StaticRoute:
+    self.node_name = "protocols static route {{destination}} next-hop {{ next_hop }}"
+    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
+                               config=self.node_name)
+end
+
+implement StaticRoute using staticRouteDefault when table == 0
+
+implementation staticRouteTable for StaticRoute:
+    self.node_name = "protocols static table {{ table }} route {{destination}} next-hop {{ next_hop }}"
+    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
+                               config=self.node_name)
+end
+
+implement StaticRoute using staticRouteTable when table > 0
+
+entity PolicyRoute extends ConfigNode:
+    string name
+    number rule
+    number table
+end
+
+implementation policyRoute for PolicyRoute:
+    self.node_name = "policy route {{name}} rule {{rule}} set table {{table}}"
+    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
+                               config=self.node_name)    
+end
+
+implement PolicyRoute using policyRoute

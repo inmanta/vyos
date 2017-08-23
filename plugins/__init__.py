@@ -8,7 +8,7 @@ import vyattaconfparser
 
 @resource("vyos::Config", id_attribute="nodeid", agent="device")
 class Config(PurgeableResource):
-    fields = ("node", "config", "credential")
+    fields = ("node", "config", "credential", "never_delete")
 
     @staticmethod
     def get_credential(_, obj):
@@ -54,26 +54,18 @@ class VyosHandler(CRUDHandler):
             conf_dict = vyattaconfparser.parse_conf(match.group(1))
             return conf_dict
 
-    def check_resource(self, ctx: HandlerContext, resource: Resource) -> Resource:
-        current = resource.clone()
-        vyos = self.get_connection(resource.id.version, resource)
-        cfg = self.get_config_dict(vyos)
-
-        for key in resource.node.split(" "):
-            if key in cfg:
-                cfg = cfg[key]
-            else:
-                print("Purged!!")
-        return current
-
     def _execute(self, ctx: HandlerContext, resource: Config, delete: bool) -> None:
         commands = [x for x in resource.config.split("\n") if len(x) > 0]
         vyos = self.get_connection(resource.id.version, resource)
         vyos.configure()
-        if delete:
+        if delete and not resource.never_delete:
+            ctx.debug("Deleting %(node)s", node=resource.node)
             vyos.delete(resource.node)
     
         for cmd in commands:
+            ctx.debug("Setting %(cmd)s", cmd=cmd)
+            if delete and resource.never_delete:
+                vyos.delete(cmd)
             vyos.set(cmd)
     
         vyos.commit()
@@ -81,19 +73,24 @@ class VyosHandler(CRUDHandler):
         vyos.exit()
 
     def read_resource(self, ctx: HandlerContext, resource: Config) -> None:
-        current = resource.clone()
         vyos = self.get_connection(resource.id.version, resource)
         cfg = self.get_config_dict(vyos)
+        keys = resource.node.split(" ")
+        ctx.debug("Comparing desired with current", desired=resource.config, current=cfg, node=resource.node)
 
         for key in resource.node.split(" "):
-            if key in cfg:
+            if isinstance(cfg, str):
+                pass
+            elif key in cfg:
                 cfg = cfg[key]
             else:
                 raise ResourcePurged()
-        return current
+
+        resource.config = ""
 
     def create_resource(self, ctx: HandlerContext, resource: Config) -> None:
         self._execute(ctx, resource, delete=False)
+        ctx.set_created()
 
     def delete_resource(self, ctx: HandlerContext, resource: Config) -> None:
         vyos = self.get_connection(resource.id.version, resource)
@@ -102,6 +99,8 @@ class VyosHandler(CRUDHandler):
         vyos.commit()
         vyos.save()
         vyos.exit()
+        ctx.set_purged()
 
     def update_resource(self, ctx: HandlerContext, changes: dict, resource: Config) -> None:
         self._execute(ctx, resource, delete=True)
+        ctx.set_updated()

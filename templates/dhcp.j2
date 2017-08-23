@@ -1,0 +1,5 @@
+{{ node_name }} default-router {{ default_router }}
+{% for dns in dns_servers -%}
+{{ node_name }} dns-server {{ dns }}
+{% endfor %}
+{{ node_name }} start {{ range_start }} stop {{ range_end }}
