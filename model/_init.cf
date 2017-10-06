@@ -1,5 +1,7 @@
 import ip
 
+os = std::OS(family=std::linux, name="vyos", version=1.1)
+
 entity ConfigItem:
     string config
 end
@@ -8,6 +10,7 @@ entity Config extends ConfigItem, std::PurgeableResource:
     string device
     string node
     bool never_delete=false
+    bool save=true
 end
 
 index Config(device, node)
