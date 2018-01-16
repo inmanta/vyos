@@ -50,6 +50,7 @@ end
 implementation vyosConfig for Host:
     self.credential = vyos::Credential(address=self.ip, user=self.user,
                                        password=self.password, port=self.port)
+    self.os = vyos::os
 end
 
 implement Host using std::hostDefaults, vyosConfig
@@ -106,7 +107,7 @@ end
 implementation dhcpServer for DhcpServer:
     self.node_name = "service dhcp-server shared-network-name {{ name }} subnet {{ subnet }}"
     self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
-                               config=std::template("vyos/dhcp.j2"), requires=self.host.requires)  
+                               config=std::template("vyos/dhcp.j2"), requires=self.host.requires)
 end
 
 implement DhcpServer using dhcpServer
