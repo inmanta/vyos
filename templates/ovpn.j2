@@ -1,0 +1,14 @@
+{{ node_name }} local-address '{{ local_address }}'
+{{ node_name }} local-host '{{ local_host }}'
+{{ node_name }} local-port '{{ local_port }}'
+{{ node_name }} mode 'site-to-site'
+{% if persistent_tunnel -%}
+{{ node_name }} 'persistent-tunnel'
+{% endif %}
+{{ node_name }} protocol '{{ protocol }}'
+{{ node_name }} remote-address '{{ remote_address }}'
+{{ node_name }} remote-port '{{ remote_port }}'
+{% if remote_host | vyos.is_public -%}
+{{ node_name }} remote-host '{{ remote_host }}'
+{% endif %}
+{{ node_name }} shared-secret-key-file '{{ shared_secret_key_file }}'

@@ -2,10 +2,19 @@ import re
 
 from inmanta.resources import resource, PurgeableResource, Resource
 from inmanta.agent.handler import provider, CRUDHandler, HandlerContext, cache, ResourcePurged, SkipResource
+from inmanta.plugins import plugin
 
 import vymgmt
 import vyattaconfparser
 import pexpect
+import netaddr
+
+
+@plugin
+def is_public(ip: "ip::ip") -> "bool":
+    addr = netaddr.IPAddress(ip)
+    return not addr.is_private()
+
 
 @resource("vyos::Config", id_attribute="nodeid", agent="device")
 class Config(PurgeableResource):
@@ -31,7 +40,7 @@ class Config(PurgeableResource):
 
 
 @provider("vyos::Config", name="sshconfig")
-class VyosHandler(CRUDHandler): 
+class VyosHandler(CRUDHandler):
     #@cache(for_version=True)
     def get_connection(self, version, resource):
         cred = resource.credential
@@ -71,13 +80,13 @@ class VyosHandler(CRUDHandler):
         if delete and not resource.never_delete:
             ctx.debug("Deleting %(node)s", node=resource.node)
             vyos.delete(resource.node)
-    
+
         for cmd in commands:
             ctx.debug("Setting %(cmd)s", cmd=cmd)
             if delete and resource.never_delete:
                 vyos.delete(cmd)
             vyos.set(cmd)
-    
+
         vyos.commit()
         if resource.save:
             vyos.save()

@@ -9,6 +9,7 @@ end
 entity Config extends ConfigItem, std::PurgeableResource:
     string device
     string node
+    bool purge_on_delete=false
     bool never_delete=false
     bool save=true
 end
@@ -147,3 +148,28 @@ implementation policyRoute for PolicyRoute:
 end
 
 implement PolicyRoute using policyRoute
+
+entity OpenVpnInterface extends ConfigNode:
+    """
+        See vyos openvpn site-2-site settings
+    """
+    string name
+    ip::ip local_address
+    ip::ip remote_address
+    ip::ip local_host
+    ip::ip? remote_host
+    ip::port local_port
+    ip::port remote_port
+    ip::protocol protocol
+    bool persistent_tunnel
+    string shared_secret_key_file
+end
+
+implementation ovpnIface for OpenVpnInterface:
+    self.node_name = "interfaces openvpn {{name}}"
+    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
+                               requires=[self.host.requires, self.requires])
+    self.config.config = std::template("vyos/ovpn.j2")
+end
+
+implement OpenVpnInterface using ovpnIface
