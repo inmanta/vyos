@@ -31,7 +31,7 @@ class Config(PurgeableResource):
 
 
 @provider("vyos::Config", name="sshconfig")
-class VyosHandler(CRUDHandler): 
+class VyosHandler(CRUDHandler):
     #@cache(for_version=True)
     def get_connection(self, version, resource):
         cred = resource.credential
@@ -71,13 +71,16 @@ class VyosHandler(CRUDHandler):
         if delete and not resource.never_delete:
             ctx.debug("Deleting %(node)s", node=resource.node)
             vyos.delete(resource.node)
-    
+
         for cmd in commands:
             ctx.debug("Setting %(cmd)s", cmd=cmd)
             if delete and resource.never_delete:
-                vyos.delete(cmd)
+                try:
+                    vyos.delete(cmd)
+                except vymgmt.ConfigError:
+                    pass
             vyos.set(cmd)
-    
+
         vyos.commit()
         if resource.save:
             vyos.save()
