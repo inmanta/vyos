@@ -1,3 +1,11 @@
+"""
+    Vyos interface module
+
+    :copyright: 2018 Inmanta
+    :contact: code@inmanta.com
+    :license: Inmanta EULA
+"""
+
 import ip
 
 os = std::OS(family=std::linux, name="vyos", version=1.1)
@@ -7,10 +15,20 @@ entity ConfigItem:
 end
 
 entity Config extends ConfigItem, std::PurgeableResource:
+    """
+        VYOS config block resource
+
+        :attr keys_only: Only compare these keys, ignore all other keys that are in the current state
+        :attr ignore_keys: Ignore these keys in the current state
+    """
     string device
     string node
     bool never_delete=false
     bool save=true
+    bool send_event=true
+    string[] keys_only=[]
+    string[] ignore_keys=[]
+
 end
 
 index Config(device, node)
@@ -24,10 +42,7 @@ implement ExtraConfig using std::none
 
 Config.extra [0:] -- ExtraConfig
 
-implementation configPrint for Config:
-end
-
-implement Config using configPrint
+implement Config using std::none
 
 entity Credential:
     string address
@@ -50,6 +65,7 @@ end
 implementation vyosConfig for Host:
     self.credential = vyos::Credential(address=self.ip, user=self.user,
                                        password=self.password, port=self.port)
+    std::AgentConfig(autostart=true, agentname=name, uri="local:", provides=self)
     self.os = vyos::os
 end
 
@@ -82,7 +98,8 @@ end
 
 entity Interface extends ConfigNode:
     string name
-    ip::cidr address
+    ip::cidr? address=null
+    bool dhcp=false
 end
 
 index Interface(host, name)

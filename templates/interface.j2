@@ -1,1 +1,5 @@
+{% if dhcp -%}
+{{ node_name }} address dhcp
+{% else -%}
 {{ node_name }} address {{ address }}
+{% endif %}
