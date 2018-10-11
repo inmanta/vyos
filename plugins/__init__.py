@@ -146,9 +146,15 @@ class VyosHandler(CRUDHandler):
                     dcfg[key] = value
 
         ccfg = {}
-        for k, v in current.config:
-            if k not in current.ignore_keys and (len(current.keys_only) == 0 or k in current.keys_only):
-                ccfg[k] = v
+        for key, value in current.config:
+            if key not in current.ignore_keys and (len(current.keys_only) == 0 or key in current.keys_only):
+                if key in ccfg:
+                    if isinstance(ccfg[key], str):
+                        ccfg[key] = [ccfg[key], value]
+                    else:
+                        ccfg[key].append(value)
+                else:
+                    ccfg[key] = value
 
         changed = self._dict_diff(False, ccfg, dcfg)
 
