@@ -137,7 +137,13 @@ class VyosHandler(CRUDHandler):
             if line != current.node and len(line.strip()) > 0:
                 key = " ".join(parts[:-1])
                 value = parts[-1]
-                dcfg[key] = value
+                if key in dcfg:
+                    if isinstance(dcfg[key], str):
+                        dcfg[key] = [dcfg[key], value]
+                    else:
+                        dcfg[key].append(value)
+                else:
+                    dcfg[key] = value
 
         ccfg = {}
         for k, v in current.config:
