@@ -105,8 +105,6 @@ end
 Interface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
 Interface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
 
-index Interface(host, name)
-
 implementation iface for Interface:
     self.node_name = "interfaces ethernet {{ name }}"
     self.config = vyos::Config(
@@ -142,8 +140,6 @@ implement Vif using vif
 entity Bridge extends Interface:
     string type="bridge"
 end
-
-index Bridge(host, name)
 
 Interface.bridge_group [0:1] -- Bridge.interfaces [0:]
 
