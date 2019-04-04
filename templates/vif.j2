@@ -1,12 +1,9 @@
-{% if dhcp -%}
-{{ node_name }} address dhcp
-{% elif address -%}
-{{ node_name }} address {{ address }}
-{% else -%}
-{{ node_name }}
+{{ parent.node_name }} vif {{ vlan }}
+{% if address -%}
+{{ parent.node_name }} vif {{ vlan }} address {{ address }}
 {% endif %}
 {% if bridge_group is defined -%}
-{{ node_name }} bridge-group bridge {{ bridge_group.name }}
+{{ parent.node_name }} vif {{ vlan }} bridge-group bridge {{ bridge_group.name }}
 {% endif %}
 {% if traffic_policy_out is defined -%}
 {{ node_name }} traffic-policy out {{ traffic_policy_out.name }}

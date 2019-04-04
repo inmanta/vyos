@@ -7,6 +7,7 @@
 """
 
 import ip
+import net
 
 os = std::OS(family=std::linux, name="vyos", version=1.1)
 
@@ -28,7 +29,6 @@ entity Config extends ConfigItem, std::PurgeableResource:
     bool send_event=true
     string[] keys_only=[]
     string[] ignore_keys=[]
-
 end
 
 index Config(device, node)
@@ -102,15 +102,61 @@ entity Interface extends ConfigNode:
     bool dhcp=false
 end
 
+Interface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
+Interface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
+
 index Interface(host, name)
 
 implementation iface for Interface:
     self.node_name = "interfaces ethernet {{ name }}"
-    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
-                               config=std::template("vyos/interface.j2"), requires=self.host.requires)
+    self.config = vyos::Config(
+        device=self.host.name, 
+        node=self.node_name, 
+        credential=self.host.credential,
+        config=std::template("vyos/interface.j2"), 
+        requires=self.host.requires
+    )
 end
 
 implement Interface using iface
+
+Vif.parent [1] -- Interface
+
+entity Vif extends Interface:
+    net::vlan_id vlan
+    string type="vif"
+    string name=""
+end
+
+index Vif(parent, vlan)
+
+implementation vif for Vif:
+    self.host = self.parent.host
+    self.node_name = "{{ parent.node_name}} vif {{ vlan }}"
+    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
+                               config=std::template("vyos/vif.j2"), requires=[self.requires, self.host.requires])
+end
+
+implement Vif using vif
+
+entity Bridge extends Interface:
+    string type="bridge"
+end
+
+index Bridge(host, name)
+
+Interface.bridge_group [0:1] -- Bridge.interfaces [0:]
+
+implement Bridge using bridge
+
+implementation bridge for Bridge:
+    self.node_name = "interfaces bridge {{name}}"
+    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
+                               config=std::template("vyos/bridge.j2"), requires=[self.requires, self.host.requires])
+
+    self.config.provides = self.interfaces
+end
+
 
 entity DhcpServer extends ConfigNode:
     string name
@@ -164,3 +210,32 @@ implementation policyRoute for PolicyRoute:
 end
 
 implement PolicyRoute using policyRoute
+
+entity Shaper extends ConfigNode:
+    string name
+    string bandwidth
+    string default_bandwidth="50%"
+    string default_ceiling="100%"
+    string default_queue_type="fair-queue"
+end
+
+implementation shaper for Shaper:
+    self.node_name = "traffic-policy shaper {{ name }}"
+    self.config = vyos::Config(
+        device=self.host.name, 
+        node=self.node_name, 
+        credential=self.host.credential,
+        config=std::template("vyos/shaper.j2"), 
+        requires=[self.host.requires, self.requires]
+    )
+
+    for iface in self.interfaces_in:
+        iface.config.requires = self.config
+    end
+
+    for iface in self.interfaces_out:
+        iface.config.requires = self.config
+    end
+end
+
+implement Shaper using shaper
