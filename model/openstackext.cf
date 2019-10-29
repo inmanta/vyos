@@ -1,0 +1,24 @@
+import openstack
+import vyos
+
+entity OpenstackHost extends vyos::BaseHost, openstack::Host:
+    """
+        A vyos based host for Openstack
+    """
+    string? floatingIP
+end
+
+implementation openstackConfig for OpenstackHost:
+    self.image = openstack::find_image(provider, vyos::os)
+end
+
+
+implementation withFip for OpenstackHost:
+    self.credential = vyos::Credential(address=self.floatingIP, user=self.user,
+                                        password=self.password, port=self.port)
+end
+
+implement OpenstackHost using withFip when floatingIP is defined
+implement OpenstackHost using vyos::commonConfig when not (floatingIP is defined)
+implement OpenstackHost using parents
+implement OpenstackHost using openstackConfig

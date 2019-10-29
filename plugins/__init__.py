@@ -190,7 +190,8 @@ class VyosHandler(CRUDHandler):
         cfg = current
         for key in resource.node.split(" "):
             if isinstance(cfg, str):
-                pass
+                cfg = {cfg:{}}
+                break
             elif key in cfg:
                 cfg = cfg[key]
             else:
