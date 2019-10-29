@@ -309,3 +309,23 @@ implementation shaper for Shaper:
 end
 
 implement Shaper using shaper
+
+entity Hostname extends ConfigNode:
+    string name
+end
+
+index Hostname(host)
+
+implementation hostname for Hostname:
+    self.node_name = "system host-name"
+    self.config = vyos::Config(
+        device=self.host.name, 
+        node=self.node_name, 
+        credential=self.host.credential,
+        config=std::template("vyos/hostname.j2"), 
+        requires=[self.host.requires, self.requires],
+        provides=self.provides
+    )
+end
+
+implement Hostname using hostname

@@ -13,6 +13,7 @@ from inmanta.agent.handler import provider, CRUDHandler, HandlerContext, cache, 
 import vymgmt
 import vyattaconfparser
 import pexpect
+from pexpect.exceptions import TIMEOUT
 
 @resource("vyos::Config", id_attribute="nodeid", agent="device")
 class Config(PurgeableResource):
@@ -66,26 +67,55 @@ class VyosHandler(CRUDHandler):
         vyos = self.get_connection(resource.id.version, resource)
         vyos.logout()
 
+    def __execute_command(self, vyos, command, terminator):
+        """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
+        conn = vyos._Router__conn
+        
+        conn.sendline(command)
+
+        i = conn.expect([terminator, TIMEOUT], timeout=30)
+
+        if not i==0:
+            raise vymgmt.VyOSError("Connection timed out")
+
+        output = conn.before
+
+        if not conn.prompt():
+            raise vymgmt.VyOSError("Connection timed out")
+
+        if isinstance(output, bytes):
+            output = output.decode("utf-8")
+        return output
+
+
     def get_config_dict(self, ctx, resource, vyos):
         if resource.device in self.__cache:
             ctx.debug("Get raw config from cache")
             return self.__cache[resource.device]
+        out = vyos.configure()
+        out = vyos.run_op_mode_command("save /tmp/inmanta_tmp")
+        out = vyos.exit()
 
-        config = vyos.run_op_mode_command("echo 'START PRINT'; cat /config/config.boot; echo 'END PRINT'")
+        # vyos.configure() breaks unique prompt, causing config transfer to fail
+        command = "cat /tmp/inmanta_tmp; echo 'END PRINT'"
+        config = self.__execute_command(vyos, command, "END PRINT\r\n")
         config = config.replace("\r", "")
-        match = re.search(r"[^\n]+\nSTART PRINT\n(.*)END PRINT\n", config, re.DOTALL)
-        if match:
-            ctx.debug("Got raw config", config=match.group(1))
-            conf_dict = vyattaconfparser.parse_conf(match.group(1))
-            self.__cache[resource.device] = conf_dict
-            return conf_dict
+        config = config.replace(command,"")
+        ctx.debug("Got raw config", config=config)
+        conf_dict = vyattaconfparser.parse_conf(config)
+        self.__cache[resource.device] = conf_dict
+        return conf_dict
 
     def _invalidate_cache(self, resource):
         if resource.device in self.__cache:
             del self.__cache[resource.device + "_" + resource.id.version]
-
+    
     def _dict_to_path(self, node, dct):
         paths = []
+        if isinstance(dct, str):
+            paths.append((node, dct))
+            return paths
+
         for k, v in dct.items():
             if isinstance(v, str):
                 paths.append((node + " " + k, v))
