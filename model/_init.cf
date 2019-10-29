@@ -8,16 +8,13 @@
 
 import ip
 import net
-import ssh
 
 os = std::OS(family=std::linux, name="vyos", version=1.1)
 
-typedef area as number matching self >= 0 and self < 1
-typedef smp_affinity as string matching /^(\d{1,5}\s*$)|(auto)$/ 
+typedef area as number matching self >= 0 and self < 4294967296
+typedef smp_affinity as string matching /^auto|[0-9a-fA-F]+(,[0-9a-fA-F]+)?$/ 
 typedef duplex as string matching self == "auto" or self == "half" or self == "full"
-typedef speed as string matching /^(\d{1,5}\s*$)|(auto)$/
-typedef address as string matching self == "dhcp" or self == "dhcpv6" or ip::is_valid_ip_v10(self) == true
-
+typedef speed as string matching self in ["10", "100", "1000", "2500","10000", "auto"]
 
 # General Framework
 
@@ -131,22 +128,15 @@ entity Interface extends ConfigNode:
     smp_affinity smp_affinity = "auto"
 end
 
-# entity Ethernet extends ConfigNode: 
-#     duplex duplex = "auto"
-#     speed speed = "auto"
-#     smp_affinity smp_affinity = "auto"
-#     address address = "dhcp"
-# end
-
 entity Loopback extends ConfigNode:
     string loName
-    ip::cidr loAddress = ""
+    ip::cidr loAddress
 end
 
 entity Ospf extends ConfigNode:
     area area = 0 
-    ip::cidr network=""
-    ip::ip router_id=""
+    ip::cidr network
+    ip::ip router_id
 end
 
 Interface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
