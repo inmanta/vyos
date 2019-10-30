@@ -4,10 +4,15 @@ protocols ospf parameters router-id {{ router_id }}
 protocols ospf parameters abr-type {{abrtype}}
 
 {% if passive_interfaces is defined%}{%for pi in passive_interfaces%}
-protocol ospf passive-interface {{pi}}
+protocols ospf passive-interface {{pi}}
 {%endfor%}{%endif%}
 {% if passive_interface_excludes is defined%}{%for pie in passive_interface_excludes%}
-protocol ospf passive-interface-exclude {{pie}}
+protocols ospf passive-interface-exclude {{pie}}
 {%endfor%}{%endif%}
 
-
+{% for redistribute in redistributes %}
+protocols ospf redistribute {{redistribute.type}} metric-type {{redistribute.metric_type}}
+{% if redistribute.metric is defined -%} 
+protocols ospf redistribute {{redistribute.type}} metric {{redistribute.metric}}
+{%-endif%}
+{%endfor%}
