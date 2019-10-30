@@ -86,6 +86,27 @@ class VyosHandler(CRUDHandler):
         # rely on built in cache mechanism to clean up
         return {}
 
+    def __execute_command(self, vyos, command, terminator):
+        """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
+        conn = vyos._Router__conn
+        
+        conn.sendline(command)
+
+        i = conn.expect([terminator, TIMEOUT], timeout=30)
+
+        if not i==0:
+            raise vymgmt.VyOSError("Connection timed out")
+
+        output = conn.before
+
+        if not conn.prompt():
+            raise vymgmt.VyOSError("Connection timed out")
+
+        if isinstance(output, bytes):
+            output = output.decode("utf-8")
+        return output
+
+
     def get_config_dict(self, ctx, resource, vyos):
         cache = self.get_versioned_cache(resource.id.version)
         if resource.device in cache:
