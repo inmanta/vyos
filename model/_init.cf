@@ -11,6 +11,13 @@ import net
 
 os = std::OS(family=std::linux, name="vyos", version=1.1)
 
+typedef area as number matching self >= 0 and self < 4294967296
+typedef smp_affinity as string matching /^auto|[0-9a-fA-F]+(,[0-9a-fA-F]+)?$/ 
+typedef duplex as string matching self == "auto" or self == "half" or self == "full"
+typedef speed as string matching self in ["10", "100", "1000", "2500","10000", "auto"]
+
+# General Framework
+
 entity ConfigItem:
     string config
 end
@@ -18,6 +25,8 @@ end
 entity Config extends ConfigItem, std::PurgeableResource:
     """
         VYOS config block resource
+
+        This is the central resource, that is used to deploy specific configlets. 
 
         :attr keys_only: Only compare these keys, ignore all other keys that are in the current state
         :attr ignore_keys: Ignore these keys in the current state
@@ -53,32 +62,45 @@ end
 
 implement Credential using std::none
 
-entity Host extends ip::Host:
+entity BaseHost extends ip::Host:
     """
         A vyos (or derivative) based host.
     """
     string user="inmanta"
     string password="inmanta"
-    number port=22
+    number port=22    
 end
 
-implementation vyosConfig for Host:
-    self.credential = vyos::Credential(address=self.ip, user=self.user,
-                                       password=self.password, port=self.port)
+entity Host extends BaseHost:
+
+end
+
+implementation vyosConfig for BaseHost:
     std::AgentConfig(autostart=true, agentname=name, uri="local:", provides=self)
     self.os = vyos::os
 end
 
-implement Host using std::hostDefaults, vyosConfig
+implementation commonConfig for BaseHost:
+    self.credential = vyos::Credential(address=self.ip, user=self.user,
+                                        password=self.password, port=self.port)
+end
 
-Host.credential [1] -- Credential
+
+implement BaseHost using vyosConfig
+implement BaseHost using parents
+
+implement Host using parents
+implement Host using commonConfig
+
+BaseHost.credential [1] -- Credential
 
 entity ConfigNode:
     string node_name
 end
 
-ConfigNode.host [1] -- Host
+
 ConfigNode.config [0:1] -- ConfigItem
+ConfigNode.host [1] -- BaseHost
 
 entity Masquerade extends ConfigNode:
     string outbound_interface
@@ -100,6 +122,21 @@ entity Interface extends ConfigNode:
     string name
     ip::cidr? address=null
     bool dhcp=false
+    bool never_delete=false
+    duplex duplex = "auto"
+    speed speed = "auto"
+    smp_affinity smp_affinity = "auto"
+end
+
+entity Loopback extends ConfigNode:
+    string loName
+    ip::cidr loAddress
+end
+
+entity Ospf extends ConfigNode:
+    area area = 0 
+    ip::cidr network
+    ip::ip router_id
 end
 
 Interface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
@@ -116,7 +153,34 @@ implementation iface for Interface:
     )
 end
 
+implementation loopback for Loopback:
+    self.node_name = "interfaces loopback {{ loName }}"
+    self.config = vyos::Config(
+        device=self.host.name,
+        node=self.node_name,
+        credential=self.host.credential,
+        config=std::template("vyos/lointerface.j2"),
+        requires=self.host.requires
+    )
+end
+
+implementation ospf for Ospf:  
+    self.node_name = "protocols ospf"
+    self.config = vyos::Config(
+        device=self.host.name,
+        node=self.node_name,
+        credential=self.host.credential,
+        config=std::template("vyos/ospf.j2"),
+        requires=self.host.requires,
+    )
+end
+
+
 implement Interface using iface
+
+implement Loopback using loopback
+
+implement Ospf using ospf
 
 Vif.parent [1] -- Interface
 
