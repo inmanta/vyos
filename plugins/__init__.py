@@ -42,30 +42,24 @@ class Config(PurgeableResource):
 class VyosHandler(CRUDHandler):
     def __init__(self, agent, io=None):
         CRUDHandler.__init__(self, agent, io)
-        self.__cache = {}
+        self.connection = None
 
-    #@cache(for_version=True)
     def get_connection(self, version, resource):
+        if self.connection:
+            return self.connection
+
         cred = resource.credential
         vyos = vymgmt.Router(cred["address"], cred["user"], cred["password"], cred["port"])
         try:
             vyos.login()
         except pexpect.pxssh.ExceptionPxssh:
             raise SkipResource("Host not available (yet)")
+        self.connection = vyos
         return vyos
 
-    def pre(self, ctx: HandlerContext, resource: Config) -> None:
-        vyos = self.get_connection(resource.id.version, resource)
-        status = vyos._status()
-        if not status["logged_in"]:
-            try:
-                vyos.login()
-            except pexpect.pxssh.ExceptionPxssh:
-                raise SkipResource("Host not available (yet)")
-
     def post(self, ctx: HandlerContext, resource: Config) -> None:
-        vyos = self.get_connection(resource.id.version, resource)
-        vyos.logout()
+        if self.connection:
+            self.connection.logout()
 
     def __execute_command(self, vyos, command, terminator):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
@@ -87,13 +81,21 @@ class VyosHandler(CRUDHandler):
             output = output.decode("utf-8")
         return output
 
+    @cache(timeout=60)
+    def get_versioned_cache(self, version):
+        # rely on built in cache mechanism to clean up
+        return {}
 
     def get_config_dict(self, ctx, resource, vyos):
-        if resource.device in self.__cache:
+        cache = self.get_versioned_cache(resource.id.version)
+        if resource.device in cache:
             ctx.debug("Get raw config from cache")
-            return self.__cache[resource.device]
+            return cache[resource.device]
         out = vyos.configure()
-        out = vyos.run_op_mode_command("save /tmp/inmanta_tmp")
+        out = vyos.run_conf_mode_command("save /tmp/inmanta_tmp")
+        if "Saving configuration to '/tmp/inmanta_tmp'" not in out:
+            raise SkipResource(f"Could not save config: {out}")
+        ctx.debug("Saved config: %(out)s", out=out)
         out = vyos.exit()
 
         # vyos.configure() breaks unique prompt, causing config transfer to fail
@@ -103,12 +105,13 @@ class VyosHandler(CRUDHandler):
         config = config.replace(command,"")
         ctx.debug("Got raw config", config=config)
         conf_dict = vyattaconfparser.parse_conf(config)
-        self.__cache[resource.device] = conf_dict
+        cache[resource.device] = conf_dict
         return conf_dict
 
     def _invalidate_cache(self, resource):
-        if resource.device in self.__cache:
-            del self.__cache[resource.device + "_" + resource.id.version]
+        cache = self.get_versioned_cache(resource.id.version)
+        if resource.device in cache:
+            del cache[resource.device]
     
     def _dict_to_path(self, node, dct):
         paths = []
@@ -162,8 +165,8 @@ class VyosHandler(CRUDHandler):
         """
         dcfg = {}
 
-        for line in desired.config.split("\n"):
-            parts = line.split(" ")
+        for line in desired.config.strip().split("\n"):
+            parts = line.strip().split(" ")
             if line != current.node and len(line.strip()) > 0:
                 key = " ".join(parts[:-1])
                 value = parts[-1]
@@ -186,7 +189,10 @@ class VyosHandler(CRUDHandler):
                 else:
                     ccfg[key] = value
 
-        changed = self._dict_diff(False, ccfg, dcfg)
+        if ccfg and desired.purged:
+            changed = {"purged":dict(desired=desired.purged, current=False)}
+        else:
+            changed = self._dict_diff(False, ccfg, dcfg)
 
         return changed
 
@@ -235,16 +241,14 @@ class VyosHandler(CRUDHandler):
 
     def create_resource(self, ctx: HandlerContext, resource: Config) -> None:
         ctx.debug("Creating resource, invalidating cache")
-        if resource.device in self.__cache:
-            del self.__cache[resource.device]
+        self._invalidate_cache(resource)
 
         self._execute(ctx, resource, delete=False)
         ctx.set_created()
 
     def delete_resource(self, ctx: HandlerContext, resource: Config) -> None:
         ctx.debug("Deleting resource, invalidating cache")
-        if resource.device in self.__cache:
-            del self.__cache[resource.device]
+        self._invalidate_cache(resource)
 
         vyos = self.get_connection(resource.id.version, resource)
         vyos.configure()
@@ -257,8 +261,7 @@ class VyosHandler(CRUDHandler):
 
     def update_resource(self, ctx: HandlerContext, changes: dict, resource: Config) -> None:
         ctx.debug("Updating resource, invalidating cache")
-        if resource.device in self.__cache:
-            del self.__cache[resource.device]
+        self._invalidate_cache(resource)
 
         self._execute(ctx, resource, delete=True)
         ctx.set_updated()
