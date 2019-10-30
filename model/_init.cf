@@ -96,6 +96,8 @@ BaseHost.credential [1] -- Credential
 
 entity ConfigNode:
     string node_name
+    bool purged = false
+    bool purge_on_delete = false
 end
 
 
@@ -133,11 +135,34 @@ entity Loopback extends ConfigNode:
     ip::cidr loAddress
 end
 
+typedef abrtype_t as string matching self in ["cisco", "ibm", "shortcut", "standard"]
+
+index Ospf(host)
+
 entity Ospf extends ConfigNode:
     area area = 0 
     ip::cidr network
     ip::ip router_id
+    string[]? passive_interfaces
+    string[]? passive_interface_excludes
+    abrtype_t abrtype = "cisco"
 end
+
+typedef redistribute_t as string matching self in ["bgp", "connected", "kernel", "rip", "static"]
+typedef ospf_metric_t as number matching self>0 and self<=16
+typedef ospf_metric_type_t as number matching self in [1, 2]
+
+entity OspfRedistribute:
+    redistribute_t type
+    ospf_metric_t? metric
+    ospf_metric_type_t metric_type = 2
+end
+
+OspfRedistribute.ospf [1] -- Ospf.redistributes [0:]
+
+index OspfRedistribute(ospf, type)
+
+implement OspfRedistribute using std::none
 
 Interface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
 Interface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
@@ -172,6 +197,8 @@ implementation ospf for Ospf:
         credential=self.host.credential,
         config=std::template("vyos/ospf.j2"),
         requires=self.host.requires,
+        purged=purged,
+        purge_on_delete=purge_on_delete
     )
 end
 
