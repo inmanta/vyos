@@ -135,12 +135,6 @@ entity Loopback extends ConfigNode:
     ip::cidr loAddress
 end
 
-entity Ospf extends ConfigNode:
-    area area = 0 
-    ip::cidr network
-    ip::ip router_id
-end
-
 typedef abrtype_t as string matching self in ["cisco", "ibm", "shortcut", "standard"]
 
 index Ospf(host)
