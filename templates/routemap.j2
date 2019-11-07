@@ -1,0 +1,10 @@
+{{ node_name }}
+{% if description -%}
+{{ node_name }} description '{{ description }}'
+{% endif %}
+{% for rule in rules -%}
+{{ node_name }} rule {{ rule.id }} action {{ rule.action }}
+{% if rule.match.interface -%}
+{{ node_name }} rule {{ rule.id }} match interface {{ rule.match.interface }}
+{% endif %}
+{% endfor %}

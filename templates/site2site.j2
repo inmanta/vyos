@@ -1,0 +1,16 @@
+{{ node_name }} authentication id {{ authentication.id }}
+{{ node_name }} authentication mode {{ authentication.mode }}
+{% if authentication.remote_id -%}{{ node_name }} authentication remote-id {{ authentication.remote_id }}{% endif %}
+{% if authentication.mode == "rsa" and authentication.rsa_key_name -%}
+{{ node_name }} authentication rsa-key-name {{ authentication.rsa_key_name}}
+{% else %}
+{{ "Mode is not support yet in the template" / 0 }}
+{% endif %}
+{{ node_name }} connection-type {{ connection_type }}
+{{ node_name }} local-address {{ local_address }}
+{{ node_name }} ike-group {{ ike_group.name }}
+{{ node_name }} default-esp-group {{ default_esp_group.name }}
+{% for tunnel in tunnels -%}
+{{ node_name }} tunnel {{ tunnel.id }} local prefix {{ tunnel.local_prefix }}
+{{ node_name }} tunnel {{ tunnel.id }} remote prefix {{ tunnel.remote_prefix }}
+{% endfor %}

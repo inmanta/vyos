@@ -1,0 +1,7 @@
+{{ node_name }} ikev2-reauth 'no'
+{{ node_name }} key-exchange '{{ key_exchange }}'
+{{ node_name }} lifetime '{{ lifetime }}'
+{% for prop in proposals %}
+{{ node_name }} proposal {{ prop.id }} encryption '{{ prop.encryption }}'
+{{ node_name }} proposal {{ prop.id }} hash '{{ prop.hash }}'
+{% endfor %}

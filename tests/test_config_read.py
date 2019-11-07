@@ -24,7 +24,7 @@ vyos::Hostname(host=r1, name=r1.name)
 
     ctx = inmanta.agent.handler.HandlerContext(resource)
 
-    vyos = handler.get_connection(resource.id.version, resource)
+    vyos = handler.get_connection(ctx, resource.id.version, resource)
 
     rawcfg = handler.get_config_dict(ctx, resource, vyos)
 

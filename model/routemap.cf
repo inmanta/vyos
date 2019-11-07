@@ -1,0 +1,25 @@
+"""
+    Vyos interface module
+
+    :copyright: 2019 Inmanta
+    :contact: code@inmanta.com
+    :license: Inmanta EULA
+"""
+import ip
+import vyos
+
+typedef rm_action_t as string matching self in ["permit", "deny"]
+
+entity Rule:
+    number id
+    rm_action_t action
+end
+
+Rule.match [1] -- Match
+
+entity Match:
+    string? interface=null
+end
+
+implement Rule using std::none
+implement Match using std::none
