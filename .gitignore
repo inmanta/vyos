@@ -1,2 +1,6 @@
 plugins/__pycache__
 tests/__pycache__
+*.orig
+.vscode
+tags
+.pytest_cache
