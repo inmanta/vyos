@@ -8,6 +8,7 @@
 
 import ip
 import net
+import vyos::routemap
 
 os = std::OS(family=std::linux, name="vyos", version=1.1)
 
@@ -17,7 +18,6 @@ typedef duplex as string matching self == "auto" or self == "half" or self == "f
 typedef speed as string matching self in ["10", "100", "1000", "2500","10000", "auto"]
 
 # General Framework
-
 entity ConfigItem:
     string config
 end
@@ -30,6 +30,7 @@ entity Config extends ConfigItem, std::PurgeableResource:
 
         :attr keys_only: Only compare these keys, ignore all other keys that are in the current state
         :attr ignore_keys: Ignore these keys in the current state
+        :attr facts: When set to true the config is never executed. The value under node is exposed as a fact
     """
     string device
     string node
@@ -38,6 +39,7 @@ entity Config extends ConfigItem, std::PurgeableResource:
     bool send_event=true
     string[] keys_only=[]
     string[] ignore_keys=[]
+    bool facts=false
 end
 
 index Config(device, node)
@@ -96,8 +98,8 @@ BaseHost.credential [1] -- Credential
 
 entity ConfigNode:
     string node_name
-    bool purged = false
-    bool purge_on_delete = false
+    bool purged=false
+    bool purge_on_delete=false
 end
 
 
@@ -116,23 +118,46 @@ implement Masquerade using masq
 
 implementation masq for Masquerade:
     self.node_name = "nat source rule {{ rule }}"
-    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
-                               config=std::template("vyos/masq.j2"), requires=self.host.requires)
+    self.config = vyos::Config(
+        device=self.host.name, 
+        node=self.node_name, 
+        credential=self.host.credential,
+        config=std::template("vyos/masq.j2"), 
+        requires=self.host.requires,
+        purged=self.purged,
+    )
 end
 
-entity Interface extends ConfigNode:
+
+entity BaseInterface extends ConfigNode:
     string name
     ip::cidr? address=null
     bool dhcp=false
-    bool never_delete=false
-    duplex duplex = "auto"
-    speed speed = "auto"
-    smp_affinity smp_affinity = "auto"
 end
 
+
+entity Interface extends BaseInterface:
+    bool never_delete=false
+    duplex duplex="auto"
+    speed speed="auto"
+    smp_affinity smp_affinity="auto"
+end
+
+
 entity Loopback extends ConfigNode:
-    string loName
-    ip::cidr loAddress
+    ip::cidr address
+end
+
+
+typedef tunnel_mtu_t as number matching self >= 64 and self <= 8024 
+typedef tunnel_encap_t as string matching self in ["gre", "gre-bridge", "ipip", "sit", "ipip6", "ip6ip6"]
+
+entity Tunnel extends BaseInterface:
+    string? description=null
+    tunnel_mtu_t mtu=1476
+    tunnel_encap_t encapsulation
+    ip::ip_v10 local_ip
+    ip::ip_v10? remote_ip=null
 end
 
 typedef abrtype_t as string matching self in ["cisco", "ibm", "shortcut", "standard"]
@@ -140,22 +165,23 @@ typedef abrtype_t as string matching self in ["cisco", "ibm", "shortcut", "stand
 index Ospf(host)
 
 entity Ospf extends ConfigNode:
-    area area = 0 
-    ip::cidr network
+    area area=0 
+    ip::cidr[] network
     ip::ip router_id
     string[]? passive_interfaces
     string[]? passive_interface_excludes
-    abrtype_t abrtype = "cisco"
+    abrtype_t abrtype="cisco"
 end
 
 typedef redistribute_t as string matching self in ["bgp", "connected", "kernel", "rip", "static"]
-typedef ospf_metric_t as number matching self>0 and self<=16
+typedef ospf_metric_t as number matching self > 0 and self <= 16
 typedef ospf_metric_type_t as number matching self in [1, 2]
 
 entity OspfRedistribute:
     redistribute_t type
     ospf_metric_t? metric
-    ospf_metric_type_t metric_type = 2
+    ospf_metric_type_t metric_type=2
+    string? route_map=null
 end
 
 OspfRedistribute.ospf [1] -- Ospf.redistributes [0:]
@@ -164,8 +190,8 @@ index OspfRedistribute(ospf, type)
 
 implement OspfRedistribute using std::none
 
-Interface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
-Interface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
+BaseInterface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
+BaseInterface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
 
 implementation iface for Interface:
     self.node_name = "interfaces ethernet {{ name }}"
@@ -179,13 +205,14 @@ implementation iface for Interface:
 end
 
 implementation loopback for Loopback:
-    self.node_name = "interfaces loopback {{ loName }}"
+    self.node_name = "interfaces loopback lo"
     self.config = vyos::Config(
         device=self.host.name,
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/lointerface.j2"),
-        requires=self.host.requires
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
     )
 end
 
@@ -196,18 +223,31 @@ implementation ospf for Ospf:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/ospf.j2"),
-        requires=self.host.requires,
-        purged=purged,
-        purge_on_delete=purge_on_delete
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+        purged=self.purged,
+        purge_on_delete=self.purge_on_delete
     )
 end
 
+implementation tunnel for Tunnel:
+    self.node_name = "interfaces tunnel {{ name }}"
+    self.config = vyos::Config(
+        device=self.host.name,
+        node=self.node_name,
+        credential=self.host.credential,
+        config=std::template("vyos/tunnel.j2"),
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+        purged=self.purged,
+        purge_on_delete=self.purge_on_delete,
+    )    
+end
 
 implement Interface using iface
-
 implement Loopback using loopback
-
 implement Ospf using ospf
+implement Tunnel using tunnel
 
 Vif.parent [1] -- Interface
 
@@ -346,3 +386,26 @@ implementation hostname for Hostname:
 end
 
 implement Hostname using hostname
+
+entity RouteMap extends ConfigNode:
+    string name
+    string? description=null
+end
+
+RouteMap.rules [0:] -- vyos::routemap::Rule
+
+implementation routeMap for RouteMap:
+    self.node_name = "policy route-map {{ name }}"
+    self.config = vyos::Config(
+        device=self.host.name,
+        node=self.node_name,
+        credential=self.host.credential,
+        config=std::template("vyos/routemap.j2"),
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+        purged=self.purged,
+        purge_on_delete=self.purge_on_delete,
+    )
+end
+
+implement RouteMap using routeMap

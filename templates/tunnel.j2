@@ -1,0 +1,25 @@
+{% if dhcp -%}
+{{ node_name }} address dhcp
+{% elif address -%}
+{{ node_name }} address {{ address }}
+{% else -%}
+{{ node_name }}
+{% endif %}
+{% if bridge_group is defined -%}
+{{ node_name }} bridge-group bridge {{ bridge_group.name }}
+{% endif %}
+{% if traffic_policy_out is defined -%}
+{{ node_name }} traffic-policy out {{ traffic_policy_out.name }}
+{% endif %}
+{% if traffic_policy_in is defined -%}
+{{ node_name }} traffic-policy in {{ traffic_policy_in.name }}
+{% endif %}
+{{ node_name }} mtu {{ mtu }}
+{{ node_name }} encapsulation {{ encapsulation }}
+{{ node_name }} local-ip {{ local_ip }}
+{% if remote_ip -%}
+{{ node_name }} remote-ip {{ remote_ip }}
+{% endif %}
+{% if description -%}
+{{ node_name }} description '{{ description }}'
+{% endif %}

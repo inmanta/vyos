@@ -1,0 +1,8 @@
+{{ node_name }} compression '{{ "enable" if compression else "disable" }}'
+{{ node_name }} lifetime '{{ lifetime }}'
+{{ node_name }} mode '{{ mode }}'
+{{ node_name }} pfs '{{ "enable" if pfs else "disable" }}'
+{% for prop in proposals %}
+{{ node_name }} proposal {{ prop.id }} encryption '{{ prop.encryption }}'
+{{ node_name }} proposal {{ prop.id }} hash '{{ prop.hash }}'
+{% endfor %}

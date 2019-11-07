@@ -1,7 +1,9 @@
-protocols ospf area {{area}} network {{ network }} 
 protocols ospf parameters router-id {{ router_id }}
+protocols ospf parameters abr-type {{ abrtype }}
 
-protocols ospf parameters abr-type {{abrtype}}
+{% for net in network -%}
+protocols ospf area {{ area }} network {{ net }} 
+{% endfor %}
 
 {% if passive_interfaces is defined%}{%for pi in passive_interfaces%}
 protocols ospf passive-interface {{pi}}
@@ -14,5 +16,8 @@ protocols ospf passive-interface-exclude {{pie}}
 protocols ospf redistribute {{redistribute.type}} metric-type {{redistribute.metric_type}}
 {% if redistribute.metric is defined -%} 
 protocols ospf redistribute {{redistribute.type}} metric {{redistribute.metric}}
-{%-endif%}
-{%endfor%}
+{% endif %}
+{% if redistribute.route_map -%}
+{{ node_name }} redistribute {{ redistribute.type }} route-map {{ redistribute.route_map }}
+{% endif %}
+{% endfor %}

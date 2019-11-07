@@ -16,7 +16,7 @@ def test_ospf(project, vy_host, console: vymgmt.Router):
 
     ospf1 = vyos::Ospf(
         area=0,
-        network="10.15.1.0/24",
+        network=["10.15.1.0/24"],
         router_id="10.1.1.1",
         host=r1,
         purged={convert_bool(purge)}
@@ -66,7 +66,7 @@ def test_ospf_redistribute(project, vy_host, console: vymgmt.Router):
 
     ospf1 = vyos::Ospf(
         area=0,
-        network="10.15.1.0/24",
+        network=["10.15.1.0/24"],
         router_id="10.1.1.1",
         host=r1,
         purged={convert_bool(purge)},

@@ -1,0 +1,181 @@
+"""
+    Vyos interface module
+
+    :copyright: 2019 Inmanta
+    :contact: code@inmanta.com
+    :license: Inmanta EULA
+"""
+import ip
+import vyos
+
+typedef logmode_t as string matching self in ["raw" , "crypt", "parsing", "emitting", "control", "all", "private"]
+
+entity IPSECOptions extends ConfigNode:
+    string[] ipsec_interfaces=[]
+    logmode_t[] log_modes=[]
+    bool nat_traversal=false
+    ip::cidr[] allowed_nat_networks=[]
+end
+
+index IPSECOptions(host)
+
+implementation ipsecOptions for ConfigNode:
+    self.node_name = "vpn ipsec"
+    self.config = vyos::Config(
+        device=self.host.name,
+        node=self.node_name,
+        credential=self.host.credential,
+        config=std::template("vyos/ipsecoptions.j2"),
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+        purged=self.purged,
+        never_delete=true,
+    )
+end
+
+implement IPSECOptions using ipsecOptions
+
+typedef esp_mode_t as string matching self in ["tunnel", "transport"]
+typedef encryption_t as string matching self in ["aes128", "aes256", "3des"]
+typedef hash_t as string matching self in ["md5", "sha1", "sha256", "sha384", "sha512"]
+
+entity ESPGroup extends ConfigNode:
+    string name
+    bool compression
+    number lifetime
+    esp_mode_t mode
+    bool pfs
+end
+
+entity ESPProposal:
+    number id
+    encryption_t encryption
+    hash_t hash="sha1"
+end
+
+implement ESPProposal using std::none
+
+ESPGroup.proposals [1:] -- ESPProposal
+
+implementation espGroup for ESPGroup:
+    self.node_name = "vpn ipsec esp-group {{ name }}"
+    self.config = vyos::Config(
+        device=self.host.name, 
+        node=self.node_name, 
+        credential=self.host.credential,
+        config=std::template("vyos/espgroup.j2"), 
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+        purged=self.purged,
+    )
+end
+
+implement ESPGroup using espGroup
+
+typedef kex_t as string matching self in ["ikev1", "ikev2"]
+typedef dh_group_t as string matching self in [2, 5, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+
+entity IKEGroup extends ConfigNode:
+    string name
+    kex_t key_exchange="ikev1"
+    number lifetime
+
+end
+
+entity IKEProposal:
+    number id
+    dh_group_t? dh_group=null
+    encryption_t encryption
+    hash_t hash="sha1"    
+end
+
+implement IKEProposal using std::none
+
+IKEGroup.proposals [1:] -- IKEProposal
+
+implementation ikeGroup for IKEGroup:
+    self.node_name = "vpn ipsec ike-group {{ name }}"
+    self.config = vyos::Config(
+        device=self.host.name, 
+        node=self.node_name, 
+        credential=self.host.credential,
+        config=std::template("vyos/ikegroup.j2"), 
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+        purged=self.purged,
+    )
+end
+
+implement IKEGroup using ikeGroup
+
+typedef conn_type_t as string matching self in ["initiate", "respond"]
+typedef local_address_t as string matching ip::is_valid_ip_v10(self) or self == "any"
+
+entity SiteToSite extends ConfigNode:
+    string peer
+    conn_type_t connection_type
+    local_address_t local_address
+end
+
+typedef auth_mode_t as string matching self in ["pre-shared-secret", "rsa", "x509"]
+
+entity Authentication:
+    string id
+    auth_mode_t mode
+    string? pre_shared_key=null
+    string? remote_id=null
+    string? rsa_key_name=null
+end
+
+implement Authentication using std::none
+
+entity Tunnel:
+    number id
+    ip::cidr_v10 local_prefix
+    ip::cidr_v10 remote_prefix
+end
+
+implement Tunnel using std::none
+
+SiteToSite.authentication [1] -- Authentication
+SiteToSite.ike_group [1] -- IKEGroup
+SiteToSite.default_esp_group [0:1] -- ESPGroup
+SiteToSite.tunnels [0:] -- Tunnel
+
+
+implementation siteToSite for SiteToSite:
+    self.node_name = "vpn ipsec site-to-site peer {{ peer }}"
+    self.config = vyos::Config(
+        device=self.host.name, 
+        node=self.node_name, 
+        credential=self.host.credential,
+        config=std::template("vyos/site2site.j2"), 
+        requires=[self.host.requires, self.requires, self.ike_group, self.default_esp_group],
+        provides=self.provides,
+        purged=self.purged,
+    )
+end
+
+implement SiteToSite using siteToSite
+
+entity RSAKey extends ConfigNode:
+    string name
+    string rsa_key
+end 
+
+index RSAKey(host, name)
+
+implementation rsaKey for RSAKey:
+    self.node_name = "vpn rsa-keys rsa-key-name {{ name }}"
+    self.config = vyos::Config(
+        device=self.host.name, 
+        node=self.node_name, 
+        credential=self.host.credential,
+        config=std::template("vyos/rsakey.j2"), 
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+        purged=self.purged,
+    )
+end
+
+implement RSAKey using rsaKey

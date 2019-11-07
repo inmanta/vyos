@@ -14,10 +14,12 @@ import vymgmt
 import vyattaconfparser
 import pexpect
 from pexpect.exceptions import TIMEOUT
+from pexpect import pxssh
+
 
 @resource("vyos::Config", id_attribute="nodeid", agent="device")
 class Config(PurgeableResource):
-    fields = ("node", "config", "credential", "never_delete", "save", "keys_only", "ignore_keys", "device")
+    fields = ("node", "config", "credential", "never_delete", "save", "keys_only", "ignore_keys", "device", "facts")
 
     @staticmethod
     def get_credential(_, obj):
@@ -35,7 +37,21 @@ class Config(PurgeableResource):
         for ext in obj.extra:
             config += "\n" + ext.config
 
-        return config
+        # strip out all empty lines
+        lines = []
+        for line in config.split("\n"):
+            line = line.strip()
+            if line:
+                lines.append(line)
+
+        return "\n".join(lines)
+
+
+class Router(vymgmt.Router):
+    def login(self):
+        self.__conn = pxssh.pxssh()
+        self.__conn.login(self.__address, self.__user, password=self.__password, port=self.__port, sync_original_prompt=False)
+        self.__logged_in = True
 
 
 @provider("vyos::Config", name="sshconfig")
@@ -44,15 +60,16 @@ class VyosHandler(CRUDHandler):
         CRUDHandler.__init__(self, agent, io)
         self.connection = None
 
-    def get_connection(self, version, resource):
+    def get_connection(self, ctx, version, resource):
         if self.connection:
             return self.connection
 
         cred = resource.credential
-        vyos = vymgmt.Router(cred["address"], cred["user"], cred["password"], cred["port"])
+        vyos = Router(cred["address"], cred["user"], cred["password"], cred["port"])
         try:
             vyos.login()
         except pexpect.pxssh.ExceptionPxssh:
+            ctx.exception("Failed to connect to host")
             raise SkipResource("Host not available (yet)")
         self.connection = vyos
         return vyos
@@ -64,7 +81,7 @@ class VyosHandler(CRUDHandler):
     def __execute_command(self, vyos, command, terminator):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
         conn = vyos._Router__conn
-        
+
         conn.sendline(command)
 
         i = conn.expect([terminator, TIMEOUT], timeout=30)
@@ -81,7 +98,7 @@ class VyosHandler(CRUDHandler):
             output = output.decode("utf-8")
         return output
 
-    @cache(timeout=60)
+    @cache(timeout=60, for_version=True)
     def get_versioned_cache(self, version):
         # rely on built in cache mechanism to clean up
         return {}
@@ -89,7 +106,7 @@ class VyosHandler(CRUDHandler):
     def __execute_command(self, vyos, command, terminator):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
         conn = vyos._Router__conn
-        
+
         conn.sendline(command)
 
         i = conn.expect([terminator, TIMEOUT], timeout=30)
@@ -133,7 +150,7 @@ class VyosHandler(CRUDHandler):
         cache = self.get_versioned_cache(resource.id.version)
         if resource.device in cache:
             del cache[resource.device]
-    
+
     def _dict_to_path(self, node, dct):
         paths = []
         if isinstance(dct, str):
@@ -211,7 +228,7 @@ class VyosHandler(CRUDHandler):
                     ccfg[key] = value
 
         if ccfg and desired.purged:
-            changed = {"purged":dict(desired=desired.purged, current=False)}
+            changed = {"purged": dict(desired=desired.purged, current=False)}
         else:
             changed = self._dict_diff(False, ccfg, dcfg)
 
@@ -219,7 +236,7 @@ class VyosHandler(CRUDHandler):
 
     def _execute(self, ctx: HandlerContext, resource: Config, delete: bool) -> None:
         commands = [x for x in resource.config.split("\n") if len(x) > 0]
-        vyos = self.get_connection(resource.id.version, resource)
+        vyos = self.get_connection(ctx, resource.id.version, resource)
         vyos.configure()
         if delete and not resource.never_delete:
             ctx.debug("Deleting %(node)s", node=resource.node)
@@ -240,7 +257,9 @@ class VyosHandler(CRUDHandler):
         vyos.exit(force=True)
 
     def read_resource(self, ctx: HandlerContext, resource: Config) -> None:
-        vyos = self.get_connection(resource.id.version, resource)
+        if resource.facts:
+            return
+        vyos = self.get_connection(ctx, resource.id.version, resource)
         current = self.get_config_dict(ctx, resource, vyos)
         keys = resource.node.split(" ")
 
@@ -261,6 +280,8 @@ class VyosHandler(CRUDHandler):
         resource.config = current_cfg
 
     def create_resource(self, ctx: HandlerContext, resource: Config) -> None:
+        if resource.facts:
+            return
         ctx.debug("Creating resource, invalidating cache")
         self._invalidate_cache(resource)
 
@@ -268,10 +289,12 @@ class VyosHandler(CRUDHandler):
         ctx.set_created()
 
     def delete_resource(self, ctx: HandlerContext, resource: Config) -> None:
+        if resource.facts:
+            return
         ctx.debug("Deleting resource, invalidating cache")
         self._invalidate_cache(resource)
 
-        vyos = self.get_connection(resource.id.version, resource)
+        vyos = self.get_connection(ctx, resource.id.version, resource)
         vyos.configure()
         vyos.delete(resource.node)
         vyos.commit()
@@ -281,8 +304,22 @@ class VyosHandler(CRUDHandler):
         ctx.set_purged()
 
     def update_resource(self, ctx: HandlerContext, changes: dict, resource: Config) -> None:
+        if resource.facts:
+            return
         ctx.debug("Updating resource, invalidating cache")
         self._invalidate_cache(resource)
 
         self._execute(ctx, resource, delete=True)
         ctx.set_updated()
+
+    def facts(self, ctx: HandlerContext, resource: Config) -> None:
+        vyos = self.get_connection(ctx, resource.id.version, resource)
+        orig = current = self.get_config_dict(ctx, resource, vyos)
+        path = resource.node.split(" ")
+        for el in path:
+            if el in current:
+                current = current[el]
+            else:
+                ctx.debug("No value found", error=current, path=path, orig=orig)
+                return {}
+        return {"value": current}

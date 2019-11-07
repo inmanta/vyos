@@ -1,0 +1,10 @@
+{% for iface in ipsec_interfaces -%}
+{{ node_name }} ipsec-interfaces interface {{ iface }}
+{% endfor %}
+{% for mode in log_modes -%}
+{{ node_name }} logging log-modes {{ mode }}
+{% endfor %}
+{{ node_name }} nat-traversal {{ "enable" if nat_traversal else "disable" }}
+{% for net in allowed_nat_networks -%}
+{{ node_name }} nat-networks allowed-network {{ net }}
+{% endfor %}
