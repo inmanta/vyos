@@ -81,7 +81,7 @@ class VyosHandler(CRUDHandler):
     def __execute_command(self, vyos, command, terminator):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
         conn = vyos._Router__conn
-        
+
         conn.sendline(command)
 
         i = conn.expect([terminator, TIMEOUT], timeout=30)
@@ -106,7 +106,7 @@ class VyosHandler(CRUDHandler):
     def __execute_command(self, vyos, command, terminator):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
         conn = vyos._Router__conn
-        
+
         conn.sendline(command)
 
         i = conn.expect([terminator, TIMEOUT], timeout=30)
@@ -150,7 +150,7 @@ class VyosHandler(CRUDHandler):
         cache = self.get_versioned_cache(resource.id.version)
         if resource.device in cache:
             del cache[resource.device]
-    
+
     def _dict_to_path(self, node, dct):
         paths = []
         if isinstance(dct, str):
@@ -217,7 +217,7 @@ class VyosHandler(CRUDHandler):
                     dcfg[key] = value
 
         ccfg = {}
-        for key, value in current.conf:
+        for key, value in current.config:
             if key not in current.ignore_keys and (len(current.keys_only) == 0 or key in current.keys_only):
                 if key in ccfg:
                     if isinstance(ccfg[key], str):
@@ -305,7 +305,7 @@ class VyosHandler(CRUDHandler):
 
     def update_resource(self, ctx: HandlerContext, changes: dict, resource: Config) -> None:
         if resource.facts:
-            return        
+            return
         ctx.debug("Updating resource, invalidating cache")
         self._invalidate_cache(resource)
 
