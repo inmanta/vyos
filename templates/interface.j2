@@ -1,10 +1,13 @@
 {% if dhcp -%}
 {{ node_name }} address dhcp
-{% elif address -%}
+{% elif address is defined-%}
 {{ node_name }} address {{ address }}
 {% else -%}
 {{ node_name }}
 {% endif %}
+{% if addresses is defined %}{%for address in addresses%}
+{{ node_name }} address {{ address.ip }}
+{%endfor%}{%endif%}
 {% if bridge_group is defined -%}
 {{ node_name }} bridge-group bridge {{ bridge_group.name }}
 {% endif %}

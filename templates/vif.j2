@@ -2,6 +2,9 @@
 {% if address -%}
 {{ parent.node_name }} vif {{ vlan }} address {{ address }}
 {% endif %}
+{% if addresses is defined %}{%for address in addresses%}
+{{ node_name }} address {{ address.ip }}
+{%endfor%}{%endif%}
 {% if bridge_group is defined -%}
 {{ parent.node_name }} vif {{ vlan }} bridge-group bridge {{ bridge_group.name }}
 {% endif %}
