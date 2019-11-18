@@ -1,12 +1,15 @@
 import ip
 import vyos
 
-entity NetworkGroup extends vyos::ConfigNode:
+entity Group extends vyos::ConfigNode:
+end
+
+index Group(name)
+
+entity NetworkGroup extends Group:
     string name
     ip::cidr[] networks
 end
-
-index NetworkGroup(host)
 
 implementation networkGroup for NetworkGroup:
     self.node_name = "firewall group network-group"
@@ -22,12 +25,10 @@ end
 
 implement NetworkGroup using networkGroup
 
-entity NetworkGroupV6 extends vyos::ConfigNode:
+entity NetworkGroupV6 extends Group:
     string name
     ip::cidr_v6[] networks
 end
-
-index NetworkGroupV6(host)
 
 implementation networkGroupV6 for networkGroupV6:
     self.node_name = "firewall group ipv6-network-group"
@@ -35,7 +36,7 @@ implementation networkGroupV6 for networkGroupV6:
         device=self.host.name, 
         node=self.node_name, 
         credential=self.host.credential,
-        config=std::template("vyos/firewall_network_v6_group.j2"), 
+        config=std::template("vyos/firewall_network_group.j2"), 
         requires=[self.host.requires, self.requires],
         provides=self.provides
     )
@@ -43,12 +44,10 @@ end
 
 implement NetworkGroupV6 using networkGroupV6
 
-entity PortGroup extends vyos::ConfigNode:
+entity PortGroup extends Group:
     string name
     string[] ports
 end
-
-index PortGroup(host)
 
 implementation portGroup for PortGroup:
     self.node_name = "firewall group port-group"
