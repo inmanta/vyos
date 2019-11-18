@@ -1,7 +1,9 @@
-{{ parent.node_name }} vif {{ vlan }}
-{% if address -%}
-{{ parent.node_name }} vif {{ vlan }} address {{ address }}
+{% if address is defined and address-%}
+{{ node_name }}  address {{ address }}
 {% endif %}
+{% if addresses is defined %}{%for address in addresses%}
+{{ node_name }} address {{ address.ip }}
+{%endfor%}{%endif%}
 {% if bridge_group is defined -%}
 {{ parent.node_name }} vif {{ vlan }} bridge-group bridge {{ bridge_group.name }}
 {% endif %}

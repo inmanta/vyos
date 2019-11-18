@@ -13,3 +13,13 @@ def console(vy_host):
     vyos.login()
     yield vyos
     vyos.logout()
+
+@fixture
+def clear(vy_host):
+    console = vymgmt.Router(vy_host, "vyos", "vyos", 22)
+    console.login()
+    console.configure()
+    console.run_conf_mode_command("load /config/clear.config")
+    out = console.run_conf_mode_command("commit")
+    console.exit(force=True)
+    console.logout()

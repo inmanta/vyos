@@ -106,6 +106,38 @@ end
 ConfigNode.config [0:1] -- ConfigItem
 ConfigNode.host [1] -- BaseHost
 
+entity Address:
+    """
+        An address entity to add multiple addresses to an interface
+    """
+    ip::cidr_v10 ip
+end
+implement Address using std::none
+
+entity BaseInterface extends ConfigNode:
+    string name
+    ip::cidr_v10? address=null
+    bool dhcp=false
+end
+
+BaseInterface.addresses [0:] -- Address
+
+entity Interface extends BaseInterface:
+    bool never_delete=false
+    duplex duplex="auto"
+    speed speed="auto"
+    smp_affinity smp_affinity="auto"
+end
+
+implement Interface using iface
+
+index Interface(host, name)
+
+entity Loopback extends ConfigNode:
+    ip::cidr address
+end
+
+
 entity Masquerade extends ConfigNode:
     string outbound_interface
     string source_address
@@ -127,27 +159,6 @@ implementation masq for Masquerade:
         purged=self.purged,
     )
 end
-
-
-entity BaseInterface extends ConfigNode:
-    string name
-    ip::cidr? address=null
-    bool dhcp=false
-end
-
-
-entity Interface extends BaseInterface:
-    bool never_delete=false
-    duplex duplex="auto"
-    speed speed="auto"
-    smp_affinity smp_affinity="auto"
-end
-
-
-entity Loopback extends ConfigNode:
-    ip::cidr address
-end
-
 
 typedef tunnel_mtu_t as number matching self >= 64 and self <= 8024 
 typedef tunnel_encap_t as string matching self in ["gre", "gre-bridge", "ipip", "sit", "ipip6", "ip6ip6"]
@@ -199,8 +210,10 @@ implementation iface for Interface:
         device=self.host.name, 
         node=self.node_name, 
         credential=self.host.credential,
-        config=std::template("vyos/interface.j2"), 
-        requires=self.host.requires
+        config=std::template("vyos/interface.j2"),
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+        purged=self.purged
     )
 end
 
@@ -244,7 +257,6 @@ implementation tunnel for Tunnel:
     )    
 end
 
-implement Interface using iface
 implement Loopback using loopback
 implement Ospf using ospf
 implement Tunnel using tunnel
@@ -257,16 +269,21 @@ entity Vif extends Interface:
     string name=""
 end
 
+implement Vif using vif
+
 index Vif(parent, vlan)
 
 implementation vif for Vif:
     self.host = self.parent.host
     self.node_name = "{{ parent.node_name}} vif {{ vlan }}"
-    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
-                               config=std::template("vyos/vif.j2"), requires=[self.requires, self.host.requires])
+    self.config = vyos::ExtraConfig(
+        config=std::template("vyos/vif.j2"),
+        requires=[self.requires, self.host.requires],
+        provides=self.provides
+    )
+    self.parent.config.extra = self.config
 end
 
-implement Vif using vif
 
 entity Bridge extends Interface:
     string type="bridge"
