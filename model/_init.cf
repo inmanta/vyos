@@ -110,13 +110,13 @@ entity Address:
     """
         An address entity to add multiple addresses to an interface
     """
-    ip::cidr ip
+    ip::cidr_v10 ip
 end
 implement Address using std::none
 
 entity BaseInterface extends ConfigNode:
     string name
-    ip::cidr? address=null
+    ip::cidr_v10? address=null
     bool dhcp=false
 end
 
@@ -211,9 +211,9 @@ implementation iface for Interface:
         node=self.node_name, 
         credential=self.host.credential,
         config=std::template("vyos/interface.j2"),
-        ignore_keys=["vif"],
         requires=[self.host.requires, self.requires],
-        provides=self.provides
+        provides=self.provides,
+        purged=self.purged
     )
 end
 
@@ -276,14 +276,12 @@ index Vif(parent, vlan)
 implementation vif for Vif:
     self.host = self.parent.host
     self.node_name = "{{ parent.node_name}} vif {{ vlan }}"
-    self.config = vyos::Config(
-        device=self.host.name,
-        node=self.node_name,
-        credential=self.host.credential,
+    self.config = vyos::ExtraConfig(
         config=std::template("vyos/vif.j2"),
         requires=[self.requires, self.host.requires],
         provides=self.provides
     )
+    self.parent.config.extra = self.config
 end
 
 

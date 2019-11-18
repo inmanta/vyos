@@ -1,6 +1,6 @@
 {% if dhcp -%}
 {{ node_name }} address dhcp
-{% elif address is defined-%}
+{% elif address is defined and address-%}
 {{ node_name }} address {{ address }}
 {% else -%}
 {{ node_name }}
