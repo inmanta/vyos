@@ -219,6 +219,15 @@ implementation iface for Interface:
         provides=self.provides,
         purged=self.purged
     )
+    if self.inbound_rules_set is defined:
+        self.config.requires += self.inbound_rules_set.config
+    end
+    if self.local_rules_set is defined:
+        self.config.requires += self.local_rules_set.config
+    end
+    if self.outbound_rules_set is defined:
+        self.config.requires += self.outbound_rules_set.config
+    end
 end
 
 implementation loopback for Loopback:
