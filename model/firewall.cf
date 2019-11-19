@@ -2,14 +2,14 @@ import ip
 import vyos
 
 entity Group extends vyos::ConfigNode:
+    string name
 end
 
-index Group(name)
+index Group(name, host)
 
 entity AddressGroup extends Group:
-    name
     string addresses
-    string description = "inmanta managed address-group"
+    string description="inmanta managed address-group"
 end
 
 implementation addressGroup for AddressGroup:
@@ -30,7 +30,6 @@ end
 implement AddressGroup using addressGroup
 
 entity NetworkGroup extends Group:
-    string name
     ip::cidr[] networks
     string description = "inmanta managed network-group"
 end
@@ -53,7 +52,6 @@ end
 implement NetworkGroup using networkGroup
 
 entity PortGroup extends Group:
-    string name
     string[] ports
     string description = "inmanta managed port-group"
 end
@@ -76,16 +74,17 @@ end
 implement PortGroup using portGroup
 
 typedef action_t as string matching self in ["accept", "drop", "reject"]
-typedef protocol_t as sting matching self in ["tcp_udp", "all", "icmp", "tcp", "udp"] # Only a small subset for now
+typedef protocol_t as string matching self in ["tcp_udp", "all", "icmp", "tcp", "udp"] # Only a small subset for now
 
 entity Rule:
     number id
     action_t action
     protocol_t protocol
     string description = "inmanta managed rule"
-    Group[] sources = []
-    Group[] destinations = []
 end
+
+Rule.source[0:] -- Group
+Rule.destination[0:] -- Group
 
 index Rule(id)
 
