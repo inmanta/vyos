@@ -15,7 +15,8 @@ def test_firewall(project, vy_host, clear):
         host=r1,
         name="eth1",
         address="192.168.5.3/24",
-        inbound_ruleset=ruleset_1
+        inbound_ruleset=ruleset_1,
+        outbound_ruleset=ruleset_1
     )
 
     ruleset_1 = vyos::firewall::RuleSet(
@@ -129,6 +130,7 @@ def test_firewall(project, vy_host, clear):
     assert "interfaces ethernet eth1 smp_affinity auto" in interface_cfg
     assert "interfaces ethernet eth1 speed auto" in interface_cfg
     assert "interfaces ethernet eth1 firewall in name test-set-1" in interface_cfg
+    assert "interfaces ethernet eth1 firewall out name test-set-1" in interface_cfg
 
     interface_deploy = project.deploy(interface)
     assert interface_deploy.status == inmanta.const.ResourceState.deployed
