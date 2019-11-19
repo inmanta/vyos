@@ -26,3 +26,12 @@
 {% if speed -%}
 {{ node_name }} speed {{ speed }}
 {% endif %}
+{% if inbound_rule_set -%}
+{{ node_name }} firewall in name {{ inbound_rule_set.name }}
+{% endif %}
+{% if local_rule_set -%}
+{{ node_name }} firewall in name {{ local_rule_set.name }}
+{% endif %}
+{% if outbound_rule_set -%}
+{{ node_name }} firewall in name {{ outbound_rule_set.name }}
+{% endif %}
