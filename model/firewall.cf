@@ -3,23 +3,24 @@ import vyos
 
 entity Group extends vyos::ConfigNode:
     string name
+    string group_type
 end
 
 index Group(name, host)
 
 entity AddressGroup extends Group:
-    string addresses
+    string[] addresses
     string description="inmanta managed address-group"
 end
 
 implementation addressGroup for AddressGroup:
-    self.node_name = "firewall group address-group"
-    self.type = "address-group"
+    self.node_name = "firewall group address-group {{ name }}"
+    self.group_type = "address-group"
     self.config = vyos::Config(
         device=self.host.name, 
         node=self.node_name, 
         credential=self.host.credential,
-        config=std::template("vyos/firewall_addres_group.j2"), 
+        config=std::template("vyos/firewall_address_group.j2"), 
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
@@ -35,8 +36,8 @@ entity NetworkGroup extends Group:
 end
 
 implementation networkGroup for NetworkGroup:
-    self.node_name = "firewall group network-group"
-    self.type = "network-group"
+    self.node_name = "firewall group network-group {{ name }}"
+    self.group_type = "network-group"
     self.config = vyos::Config(
         device=self.host.name, 
         node=self.node_name, 
@@ -57,8 +58,8 @@ entity PortGroup extends Group:
 end
 
 implementation portGroup for PortGroup:
-    self.node_name = "firewall group port-group"
-    self.type = "port-group"
+    self.node_name = "firewall group port-group {{ name }}"
+    self.group_type = "port-group"
     self.config = vyos::Config(
         device=self.host.name, 
         node=self.node_name, 
@@ -86,7 +87,9 @@ end
 Rule.source[0:] -- Group
 Rule.destination[0:] -- Group
 
-index Rule(id)
+index Rule(id, ruleset)
+
+implement Rule using std::none
 
 entity RuleSet extends ConfigNode:
     string name
@@ -95,10 +98,10 @@ entity RuleSet extends ConfigNode:
 end
 
 index RuleSet(name, host)
-RuleSet.rules[0:] -- Rule
+RuleSet.rules[0:] -- Rule.ruleset[1]
 
 implementation ruleSet for RuleSet:
-    self.node_name = "firewall name"
+    self.node_name = "firewall name {{ name }}"
     self.config = vyos::Config(
         device=self.host.name,
         node=self.node_name,
@@ -109,4 +112,14 @@ implementation ruleSet for RuleSet:
         purged=self.purged,
         purge_on_delete=self.purge_on_delete,
     )
+    for rule in self.rules:
+        for group in rule.source:
+            self.config.requires += group.config
+        end
+        for group in rule.destination:
+            self.config.requires += group.config
+        end
+    end
 end
+
+implement RuleSet using ruleSet

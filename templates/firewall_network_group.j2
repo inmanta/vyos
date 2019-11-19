@@ -1,4 +1,4 @@
-{% for network in networks%}
-{{ node_name }} {{ name }} network {{ network }}
-{{ node_name }} {{ name }} description {{ description }}
-{% endfor %}}
+{% for network in networks %}
+{{ node_name }} network {{ network }}
+{% endfor %}
+{{ node_name }} description "{{ description }}"

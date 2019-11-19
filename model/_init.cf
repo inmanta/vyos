@@ -130,9 +130,9 @@ entity Interface extends BaseInterface:
     smp_affinity smp_affinity="auto"
 end
 
-Interface.inbound_rules_set [0:1] -- vyos::firewall::RuleSet
-Interface.local_rules_set [0:1] -- vyos::firewall::RuleSet
-Interface.outbound_rules_set [0:1] -- vyos::firewall::RuleSet
+Interface.inbound_ruleset [0:1] -- vyos::firewall::RuleSet
+Interface.local_ruleset [0:1] -- vyos::firewall::RuleSet
+Interface.outbound_ruleset [0:1] -- vyos::firewall::RuleSet
 
 implement Interface using iface
 
@@ -219,14 +219,14 @@ implementation iface for Interface:
         provides=self.provides,
         purged=self.purged
     )
-    if self.inbound_rules_set is defined:
-        self.config.requires += self.inbound_rules_set.config
+    if self.inbound_ruleset is defined:
+        self.config.requires += self.inbound_ruleset.config
     end
-    if self.local_rules_set is defined:
-        self.config.requires += self.local_rules_set.config
+    if self.local_ruleset is defined:
+        self.config.requires += self.local_ruleset.config
     end
-    if self.outbound_rules_set is defined:
-        self.config.requires += self.outbound_rules_set.config
+    if self.outbound_ruleset is defined:
+        self.config.requires += self.outbound_ruleset.config
     end
 end
 

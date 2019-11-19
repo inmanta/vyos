@@ -6,3 +6,4 @@ tags
 .pytest_cache
 .mypy_cache
 .env
+env_vars
