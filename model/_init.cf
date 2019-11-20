@@ -9,6 +9,7 @@
 import ip
 import net
 import vyos::routemap
+import vyos::firewall
 
 os = std::OS(family=std::linux, name="vyos", version=1.1)
 
@@ -129,6 +130,10 @@ entity Interface extends BaseInterface:
     smp_affinity smp_affinity="auto"
 end
 
+Interface.inbound_ruleset [0:1] -- vyos::firewall::RuleSet
+Interface.local_ruleset [0:1] -- vyos::firewall::RuleSet
+Interface.outbound_ruleset [0:1] -- vyos::firewall::RuleSet
+
 implement Interface using iface
 
 index Interface(host, name)
@@ -136,7 +141,6 @@ index Interface(host, name)
 entity Loopback extends ConfigNode:
     ip::cidr address
 end
-
 
 entity Masquerade extends ConfigNode:
     string outbound_interface
@@ -215,6 +219,15 @@ implementation iface for Interface:
         provides=self.provides,
         purged=self.purged
     )
+    if self.inbound_ruleset is defined:
+        self.config.requires += self.inbound_ruleset.config
+    end
+    if self.local_ruleset is defined:
+        self.config.requires += self.local_ruleset.config
+    end
+    if self.outbound_ruleset is defined:
+        self.config.requires += self.outbound_ruleset.config
+    end
 end
 
 implementation loopback for Loopback:

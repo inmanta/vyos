@@ -1,0 +1,13 @@
+{{ node_name }} default-action {{ default_action }}
+{{ node_name }} description "{{ description }}"
+{% for rule in rules %}
+{{ node_name }} rule {{ rule.id }} action {{ rule.action }}
+{{ node_name }} rule {{ rule.id }} protocol {{ rule.protocol }}
+{{ node_name }} rule {{ rule.id }} description "{{ rule.description }}"
+{% for group in rule.source %}
+{{ node_name }} rule {{ rule.id }} source group {{ group.group_type }} {{ group.name }}
+{% endfor %}
+{% for group in rule.destination %}
+{{ node_name }} rule {{ rule.id }} destination group {{ group.group_type }} {{ group.name }}
+{% endfor %}
+{% endfor %}
