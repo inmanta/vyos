@@ -276,7 +276,7 @@ implement Tunnel using tunnel
 
 Vif.parent [1] -- Interface
 
-entity Vif extends Interface:
+entity Vif extends BaseInterface:
     net::vlan_id vlan
     string type="vif"
     string name=""
