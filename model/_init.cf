@@ -167,6 +167,7 @@ end
 
 typedef tunnel_mtu_t as number matching self >= 64 and self <= 8024 
 typedef tunnel_encap_t as string matching self in ["gre", "gre-bridge", "ipip", "sit", "ipip6", "ip6ip6"]
+typedef tunnel_key_t as number matching self >= 0 and self <= 99999
 
 entity Tunnel extends BaseInterface:
     string? description=null
@@ -174,6 +175,7 @@ entity Tunnel extends BaseInterface:
     tunnel_encap_t encapsulation
     ip::ip_v10 local_ip
     ip::ip_v10? remote_ip=null
+    tunnel_key_t? key=null
 end
 
 typedef abrtype_t as string matching self in ["cisco", "ibm", "shortcut", "standard"]
@@ -299,11 +301,11 @@ implementation vif for Vif:
 end
 
 
-entity Bridge extends Interface:
+entity Bridge extends BaseInterface:
     string type="bridge"
 end
 
-Interface.bridge_group [0:1] -- Bridge.interfaces [0:]
+BaseInterface.bridge_group [0:1] -- Bridge.interfaces [0:]
 
 implement Bridge using bridge
 
