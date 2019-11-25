@@ -300,11 +300,11 @@ implementation vif for Vif:
 end
 
 
-entity Bridge extends Interface:
+entity Bridge extends BaseInterface:
     string type="bridge"
 end
 
-Interface.bridge_group [0:1] -- Bridge.interfaces [0:]
+BaseInterface.bridge_group [0:1] -- Bridge.interfaces [0:]
 
 implement Bridge using bridge
 
