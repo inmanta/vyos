@@ -179,3 +179,23 @@ implementation rsaKey for RSAKey:
 end
 
 implement RSAKey using rsaKey
+
+
+index KeyGen(host)
+
+entity KeyGen extends std::PurgeableResource:
+""" Ensure an RSA key has been generated """
+    string id = "keygen"
+    string device
+end
+
+KeyGen.host [1] -- vyos::BaseHost
+KeyGen.credential [1] -- vyos::Credential
+
+implementation wireup for KeyGen:
+    self.credential=self.host.credential
+    self.id = "keygen"
+    self.device = self.host.name
+end
+
+implement KeyGen using wireup

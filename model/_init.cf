@@ -50,9 +50,14 @@ Config.credential [1] -- Credential
 entity ExtraConfig extends ConfigItem:
 end
 
-implement ExtraConfig using std::none
+implementation extraconfig_depends for ExtraConfig:
+    self.parent.requires = self.requires
+    self.parent.provides = self.provides
+end
 
-Config.extra [0:] -- ExtraConfig
+implement ExtraConfig using extraconfig_depends
+
+Config.extra [0:] -- ExtraConfig.parent [1]
 
 implement Config using std::none
 
@@ -311,9 +316,13 @@ implement Bridge using bridge
 
 implementation bridge for Bridge:
     self.node_name = "interfaces bridge {{name}}"
-    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
-                               config=std::template("vyos/bridge.j2"), requires=[self.requires, self.host.requires])
-
+    self.config = vyos::Config(
+        device=self.host.name, 
+        node=self.node_name, 
+        credential=self.host.credential,
+        config=std::template("vyos/bridge.j2"),
+        requires=[self.requires, self.host.requires]
+    )
     self.config.provides = self.interfaces
 end
 

@@ -47,6 +47,17 @@ class Config(PurgeableResource):
         return "\n".join(lines)
 
 
+@resource("vyos::vpn::KeyGen", id_attribute="id", agent="device")
+class KeyGen(PurgeableResource):
+    fields = ("credential",)
+
+    @staticmethod
+    def get_credential(_, obj):
+        obj = obj.credential
+        return {"user": obj.user, "password": obj.password, "port": obj.port,
+                "address": obj.address}
+
+
 class Router(vymgmt.Router):
     def login(self):
         self.__conn = pxssh.pxssh()
@@ -54,8 +65,8 @@ class Router(vymgmt.Router):
         self.__logged_in = True
 
 
-@provider("vyos::Config", name="sshconfig")
-class VyosHandler(CRUDHandler):
+class VyosBaseHandler(CRUDHandler):
+
     def __init__(self, agent, io=None):
         CRUDHandler.__init__(self, agent, io)
         self.connection = None
@@ -98,6 +109,10 @@ class VyosHandler(CRUDHandler):
             output = output.decode("utf-8")
         return output
 
+
+@provider("vyos::Config", name="sshconfig")
+class VyosHandler(VyosBaseHandler):
+    
     @cache(timeout=60, for_version=True)
     def get_versioned_cache(self, version):
         # rely on built in cache mechanism to clean up
@@ -302,3 +317,13 @@ class VyosHandler(CRUDHandler):
                 ctx.debug("No value found", error=current, path=path, orig=orig)
                 return {}
         return {"value": current}
+
+
+@provider("vyos::vpn::KeyGen", name="keygen")
+class KeyGenHandler(VyosBaseHandler):
+
+    def read_resource(self, ctx: HandlerContext, resource: Config) -> None:
+        vyos = self.get_connection(ctx, resource.id.version, resource)
+        result = vyos.run_op_mode_command("sudo cat /config/ipsec.d/rsa-keys/localhost.key | grep pubkey")
+        if not "pubkey" in result:
+            raise ResourcePurged()
