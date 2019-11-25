@@ -159,7 +159,8 @@ implementation masq for Masquerade:
         node=self.node_name, 
         credential=self.host.credential,
         config=std::template("vyos/masq.j2"), 
-        requires=self.host.requires,
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
         purged=self.purged,
     )
 end
@@ -326,8 +327,14 @@ end
 
 implementation dhcpServer for DhcpServer:
     self.node_name = "service dhcp-server shared-network-name {{ name }} subnet {{ subnet }}"
-    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
-                               config=std::template("vyos/dhcp.j2"), requires=self.host.requires)
+    self.config = vyos::Config(
+        device=self.host.name,
+        node=self.node_name,
+        credential=self.host.credential,
+        config=std::template("vyos/dhcp.j2"),
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+    )
 end
 
 implement DhcpServer using dhcpServer
@@ -340,16 +347,28 @@ end
 
 implementation staticRouteDefault for StaticRoute:
     self.node_name = "protocols static route {{destination}} next-hop {{ next_hop }}"
-    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
-                               config=self.node_name, requires=[self.host.requires, self.requires])
+    self.config = vyos::Config(
+        device=self.host.name,
+        node=self.node_name,
+        credential=self.host.credential,
+        config=self.node_name,
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+    )
 end
 
 implement StaticRoute using staticRouteDefault when table == 0
 
 implementation staticRouteTable for StaticRoute:
     self.node_name = "protocols static table {{ table }} route {{destination}} next-hop {{ next_hop }}"
-    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
-                               config=self.node_name, requires=[self.host.requires, self.requires])
+    self.config = vyos::Config(
+        device=self.host.name, 
+        node=self.node_name, 
+        credential=self.host.credential,
+        config=self.node_name,
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+    )
 end
 
 implement StaticRoute using staticRouteTable when table > 0
@@ -362,8 +381,14 @@ end
 
 implementation policyRoute for PolicyRoute:
     self.node_name = "policy route {{name}} rule {{rule}} set table {{table}}"
-    self.config = vyos::Config(device=self.host.name, node=self.node_name, credential=self.host.credential,
-                               config=self.node_name, requires=[self.host.requires, self.requires])
+    self.config = vyos::Config(
+        device=self.host.name,
+        node=self.node_name,
+        credential=self.host.credential,
+        config=self.node_name,
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+    )
 end
 
 implement PolicyRoute using policyRoute
@@ -383,7 +408,8 @@ implementation shaper for Shaper:
         node=self.node_name, 
         credential=self.host.credential,
         config=std::template("vyos/shaper.j2"), 
-        requires=[self.host.requires, self.requires]
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
     )
 
     for iface in self.interfaces_in:
