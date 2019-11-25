@@ -23,6 +23,6 @@
 {% if description -%}
 {{ node_name }} description '{{ description }}'
 {% endif %}
-{% if key -%}}
+{% if key is defined-%}}
 {{ node_name }} parameters ip key '{{ key }}'
 {% endif %}}
