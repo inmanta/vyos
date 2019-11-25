@@ -18,6 +18,7 @@ def console(vy_host):
 def clear(vy_host):
     console = vymgmt.Router(vy_host, "vyos", "vyos", 22)
     console.login()
+    console.run_op_mode_command("sudo rm /opt/vyatta/etc/config/ipsec.d/rsa-keys/localhost.key")
     console.configure()
     console.run_conf_mode_command("load /config/clear.config")
     out = console.run_conf_mode_command("commit")

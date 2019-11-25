@@ -322,8 +322,33 @@ class VyosHandler(VyosBaseHandler):
 @provider("vyos::vpn::KeyGen", name="keygen")
 class KeyGenHandler(VyosBaseHandler):
 
-    def read_resource(self, ctx: HandlerContext, resource: Config) -> None:
+
+    def get_pubkey(self, ctx: HandlerContext, resource: Config) -> str:
         vyos = self.get_connection(ctx, resource.id.version, resource)
-        result = vyos.run_op_mode_command("sudo cat /config/ipsec.d/rsa-keys/localhost.key | grep pubkey")
+        cmd = "sudo cat /opt/vyatta/etc/config/ipsec.d/rsa-keys/localhost.key | grep pubkey"
+        result = vyos.run_op_mode_command(cmd).replace("\r","")
+        # cut echo
+        idx = result.find(cmd[0:10])
+        ctx.debug("got result A %(result)s %(idx)d", result=result, cmd=cmd, idx=idx)
+        if idx >= 0:
+            result = result[idx+len(cmd):]
+        ctx.debug("got result %(result)s", result=result, cmd=cmd)
         if not "pubkey" in result:
             raise ResourcePurged()
+        return result
+
+    def read_resource(self, ctx: HandlerContext, resource: Config) -> None:
+        self.get_pubkey(ctx, resource)
+
+    
+    def create_resource(self, ctx: HandlerContext, resource: Config) -> None:
+        vyos = self.get_connection(ctx, resource.id.version, resource)
+        cmd = "generate vpn rsa-key bits 2048 random /dev/urandom"
+        result = vyos.run_op_mode_command(cmd)
+        ctx.debug("got result %(result)s", result=result, cmd=cmd)
+        assert "has been generated" in result
+
+    def facts(self, ctx: HandlerContext, resource: Config) -> None:
+        pubkey = self.get_pubkey(ctx, resource)
+        key = pubkey.split("=")[1].strip()
+        return {"key": key}
