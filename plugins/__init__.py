@@ -365,9 +365,12 @@ class KeyGenHandler(VyosBaseHandler):
         assert "has been generated" in result
 
     def facts(self, ctx: HandlerContext, resource: Config) -> None:
-        pubkey = self.get_pubkey(ctx, resource)
-        key = pubkey.split("=")[1].strip()
-        return {"key": key}
+        try:
+            pubkey = self.get_pubkey(ctx, resource)
+            key = pubkey.split("=")[1].strip()
+            return {"key": key}
+        finally:
+            self.post(ctx, resource)
 
 
 @provider("vyos::IpFact", name="IpFact")
@@ -392,34 +395,36 @@ class IpFactHandler(VyosBaseHandler):
     # eth1             10.1.0.15/24                      u/u  
     # lo               127.0.0.1/8                       u/u  
     #                  ::1/128
+        try:
 
-        vyos = self.get_connection(ctx, resource.id.version, resource)
-        cmd = "show interfaces"
-        interface = resource.interface 
-        result = vyos.run_op_mode_command(cmd).replace("\r","")
-        ctx.debug("got result %(result)s", result=result, cmd=cmd)
+            vyos = self.get_connection(ctx, resource.id.version, resource)
+            cmd = "show interfaces"
+            interface = resource.interface 
+            result = vyos.run_op_mode_command(cmd).replace("\r","")
+            ctx.debug("got result %(result)s", result=result, cmd=cmd)
 
-        parsed_lines = [self.parse_line(line) for line in result.split("\n")]
-        parsed_lines = [line for line in parsed_lines if line is not None]
+            parsed_lines = [self.parse_line(line) for line in result.split("\n")]
+            parsed_lines = [line for line in parsed_lines if line is not None]
 
-        # find right lines    
-        ips = itertools.dropwhile(lambda x:x[0] != interface, parsed_lines)
-        ips = list(itertools.takewhile(lambda x:x[0] == interface or not x[0], ips))
-       
-        ctx.debug("got ips %(ips)s", ips=ips)
-
-        ips = [ip[1] for ip in ips]
-
-        if not ips:
-            return {}
-
-        if len(ips) == 1:
-            return {"ip_address": ips[0]}
-        else:
-            ips = sorted(ips)
-            out =  {"ip_address": ips[0]}
-            for i,addr in enumerate(ips):
-                out[f"ip_address_{i}"] = addr
-            return out
+            # find right lines    
+            ips = itertools.dropwhile(lambda x:x[0] != interface, parsed_lines)
+            ips = list(itertools.takewhile(lambda x:x[0] == interface or not x[0], ips))
         
+            ctx.debug("got ips %(ips)s", ips=ips)
+
+            ips = [ip[1] for ip in ips]
+
+            if not ips:
+                return {}
+
+            if len(ips) == 1:
+                return {"ip_address": ips[0]}
+            else:
+                ips = sorted(ips)
+                out =  {"ip_address": ips[0]}
+                for i,addr in enumerate(ips):
+                    out[f"ip_address_{i}"] = addr
+                return out
+        finally:
+            self.post(ctx, resource)
         
