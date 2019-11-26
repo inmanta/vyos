@@ -103,9 +103,12 @@ class VyosBaseHandler(CRUDHandler):
 
     def post(self, ctx: HandlerContext, resource: Config) -> None:
         if self.connection:
-            # Vyos cannot logout before exiting configuration mode
-            self.connection.exit(force=True)
-            self.connection.logout()
+            try:
+                # Vyos cannot logout before exiting configuration mode
+                self.connection.exit(force=True)
+                self.connection.logout()
+            except:
+                ctx.exception("Failed to close connection")
 
     def _execute_command(self, vyos, command, terminator):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
@@ -346,10 +349,10 @@ class KeyGenHandler(VyosBaseHandler):
         cmd = "sudo cat /opt/vyatta/etc/config/ipsec.d/rsa-keys/localhost.key | grep pubkey"
         result = vyos.run_op_mode_command(cmd).replace("\r","")
         # cut echo
-        idx = result.find(cmd[0:10])
-        ctx.debug("got result A %(result)s %(idx)d", result=result, cmd=cmd, idx=idx)
+        idx = result.find("pubkey")
+        ctx.debug("got result before %(result)s %(idx)d", result=result, cmd=cmd, idx=idx)
         if idx >= 0:
-            result = result[idx+len(cmd):]
+            result = result[idx+len("pubkey"):]
         ctx.debug("got result %(result)s", result=result, cmd=cmd)
         if not "pubkey" in result:
             raise ResourcePurged()
