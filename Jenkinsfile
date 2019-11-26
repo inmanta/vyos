@@ -15,6 +15,7 @@ pipeline {
     stages {
         stage('Test') {
             steps {
+                sh 'env'
                 sh 'rm -rf $INMANTA_TEST_ENV; python3 -m venv $INMANTA_TEST_ENV; $INMANTA_TEST_ENV/bin/python3 -m pip install -U  inmanta pytest-inmanta netaddr; $INMANTA_TEST_ENV/bin/python3 -m pip install -r vyos/requirements.txt'
                 // fix for bug in pytest-inmanta where folder name is used as module name
                 dir('vyos'){
