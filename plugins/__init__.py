@@ -383,15 +383,26 @@ class IpFactHandler(VyosBaseHandler):
             return (parts[0].strip(), re.sub(r'\x1b\[m',r'',parts[1].strip()))
 
     def facts(self, ctx: HandlerContext, resource: IpFact) -> None:
+    # example output
+    # vyos@vyos:~$ show interfaces 
+    # Codes: S - State, L - Link, u - Up, D - Down, A - Admin Down
+    # Interface        IP Address                        S/L  Description
+    # ---------        ----------                        ---  -----------
+    # eth0             10.0.0.7/24                       u/u  
+    # eth1             10.1.0.15/24                      u/u  
+    # lo               127.0.0.1/8                       u/u  
+    #                  ::1/128
+
         vyos = self.get_connection(ctx, resource.id.version, resource)
         cmd = "show interfaces"
         interface = resource.interface 
         result = vyos.run_op_mode_command(cmd).replace("\r","")
         ctx.debug("got result %(result)s", result=result, cmd=cmd)
-        interfacename = f"{interface} " #whitespace to avoid matching subinterfaces
+
         parsed_lines = [self.parse_line(line) for line in result.split("\n")]
         parsed_lines = [line for line in parsed_lines if line is not None]
-        
+
+        # find right lines    
         ips = itertools.dropwhile(lambda x:x[0] != interface, parsed_lines)
         ips = list(itertools.takewhile(lambda x:x[0] == interface or not x[0], ips))
        
