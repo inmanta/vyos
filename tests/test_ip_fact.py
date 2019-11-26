@@ -38,7 +38,7 @@ def test_ip_fact(project, vy_host, clear):
     assert "ip_address" in facts
     netaddr.IPNetwork(facts["ip_address"])
 
-
+@pytest.mark.xfail
 def test_ip_fact_multi(project, vy_host, clear):
     def make_config(purge=False):
         project.compile(f"""
