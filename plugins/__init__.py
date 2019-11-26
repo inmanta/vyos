@@ -402,6 +402,7 @@ class IpFactHandler(VyosBaseHandler):
             vyos = self.get_connection(ctx, resource.id.version, resource)
             cmd = "show interfaces"
             interface = resource.interface
+            vyos.configure()
             result = vyos.run_op_mode_command(cmd).replace("\r","")
             ctx.debug("got result %(result)s", result=result, cmd=cmd)
 
