@@ -1,12 +1,14 @@
 import vymgmt
+from inmanta.agent import handler
+
 
 def convert_bool(val):
     return "true" if val else "false"
 
-def test_ospf(project, vy_host, clear):
+def test_keygen(project, vy_host, clear):
     def make_config(purge=False):
         project.compile(f"""
-    import vyos 
+    import vyos
     import vyos::vpn
 
     r1 = vyos::Host(
@@ -20,24 +22,19 @@ def test_ospf(project, vy_host, clear):
 
 
     make_config()
-    
+
     compare = project.dryrun_resource("vyos::vpn::KeyGen")
     assert "purged" in compare
     assert len(compare) == 1
-    
-    # project.deploy_resource("vyos::Config")
 
-    # compare = project.dryrun_resource("vyos::Config")
-    # assert len(compare) == 0
+    project.deploy_resource("vyos::vpn::KeyGen")
 
-    # make_config(True)
+    compare = project.dryrun_resource("vyos::vpn::KeyGen")
+    assert len(compare) == 0
 
-    # compare = project.dryrun_resource("vyos::Config")
-    # assert "purged" in compare
-    # assert len(compare) == 1
-
-    # project.deploy_resource("vyos::Config")
-
-    # compare = project.dryrun_resource("vyos::Config")
-    # assert len(compare) == 0
-
+    resource = project.get_resource("vyos::vpn::KeyGen")
+    myhandler = project.get_handler(resource, False)
+    ctx = handler.HandlerContext(resource)
+    facts = myhandler.facts(ctx, resource)
+    assert "key" in facts
+    assert len(facts["key"]) > 5
