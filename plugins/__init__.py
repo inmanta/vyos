@@ -377,6 +377,8 @@ class IpFactHandler(VyosBaseHandler):
         parts = re.split(" +", line)
         if len(parts)<2:
             return None
+        if parts[1] == "-":
+            return None
         else:
             return (parts[0].strip(), re.sub(r'\x1b\[m',r'',parts[1].strip()))
 
@@ -388,7 +390,8 @@ class IpFactHandler(VyosBaseHandler):
         ctx.debug("got result %(result)s", result=result, cmd=cmd)
         interfacename = f"{interface} " #whitespace to avoid matching subinterfaces
         parsed_lines = [self.parse_line(line) for line in result.split("\n")]
-
+        parsed_lines = [line for line in parsed_lines if line is not None]
+        
         ips = itertools.dropwhile(lambda x:x[0] != interface, parsed_lines)
         ips = list(itertools.takewhile(lambda x:x[0] == interface or not x[0], ips))
        
