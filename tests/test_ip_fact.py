@@ -1,10 +1,12 @@
 import vymgmt
 from inmanta.agent import handler
 import netaddr
+import pytest 
 
 def convert_bool(val):
     return "true" if val else "false"
 
+@pytest.mark.xfail
 def test_ip_fact(project, vy_host, clear):
     def make_config(purge=False):
         project.compile(f"""
