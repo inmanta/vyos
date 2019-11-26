@@ -6,6 +6,7 @@
     :license: Inmanta EULA
 """
 import re
+import itertools
 
 from inmanta.resources import resource, PurgeableResource, Resource
 from inmanta.agent.handler import provider, CRUDHandler, HandlerContext, cache, ResourcePurged, SkipResource
@@ -58,6 +59,21 @@ class KeyGen(PurgeableResource):
                 "address": obj.address}
 
 
+
+@resource("vyos::IpFact", id_attribute="id", agent="device")
+class IpFact(PurgeableResource):
+    fields = ("credential","interface")
+
+    @staticmethod
+    def get_interface(_, obj):
+        return obj.interface.name 
+
+    @staticmethod
+    def get_credential(_, obj):
+        obj = obj.credential
+        return {"user": obj.user, "password": obj.password, "port": obj.port,
+                "address": obj.address}
+
 class Router(vymgmt.Router):
     def login(self):
         self.__conn = pxssh.pxssh()
@@ -89,7 +105,7 @@ class VyosBaseHandler(CRUDHandler):
         if self.connection:
             self.connection.logout()
 
-    def __execute_command(self, vyos, command, terminator):
+    def _execute_command(self, vyos, command, terminator):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
         conn = vyos._Router__conn
 
@@ -132,7 +148,7 @@ class VyosHandler(VyosBaseHandler):
 
         # vyos.configure() breaks unique prompt, causing config transfer to fail
         command = "cat /tmp/inmanta_tmp; echo 'END PRINT'"
-        config = self.__execute_command(vyos, command, "END PRINT\r\n")
+        config = self._execute_command(vyos, command, "END PRINT\r\n")
         config = config.replace("\r", "")
         config = config.replace(command,"")
         ctx.debug("Got raw config", config=config)
@@ -352,3 +368,44 @@ class KeyGenHandler(VyosBaseHandler):
         pubkey = self.get_pubkey(ctx, resource)
         key = pubkey.split("=")[1].strip()
         return {"key": key}
+
+
+@provider("vyos::IpFact", name="IpFact")
+class IpFactHandler(VyosBaseHandler):
+
+    def parse_line(self, line:str) -> "Tuple[str,str]":
+        parts = re.split(" +", line)
+        if len(parts)<2:
+            return None
+        else:
+            return (parts[0].strip(), re.sub(r'\x1b\[m',r'',parts[1].strip()))
+
+    def facts(self, ctx: HandlerContext, resource: IpFact) -> None:
+        vyos = self.get_connection(ctx, resource.id.version, resource)
+        cmd = "show interfaces"
+        interface = resource.interface 
+        result = vyos.run_op_mode_command(cmd).replace("\r","")
+        ctx.debug("got result %(result)s", result=result, cmd=cmd)
+        interfacename = f"{interface} " #whitespace to avoid matching subinterfaces
+        parsed_lines = [self.parse_line(line) for line in result.split("\n")]
+
+        ips = itertools.dropwhile(lambda x:x[0] != interface, parsed_lines)
+        ips = list(itertools.takewhile(lambda x:x[0] == interface or not x[0], ips))
+       
+        ctx.debug("got ips %(ips)s", ips=ips)
+
+        ips = [ip[1] for ip in ips]
+
+        if not ips:
+            return {}
+
+        if len(ips) == 1:
+            return {"ip_address": ips[0]}
+        else:
+            ips = sorted(ips)
+            out =  {"ip_address": ips[0]}
+            for i,addr in enumerate(ips):
+                out[f"ip_address_{i}"] = addr
+            return out
+        
+        

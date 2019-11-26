@@ -476,3 +476,23 @@ implementation routeMap for RouteMap:
 end
 
 implement RouteMap using routeMap
+
+entity IpFact extends std::PurgeableResource:
+    """ Discover interface IP """
+    string id
+    string device
+end
+index IpFact(interface)
+
+IpFact.host [1] -- vyos::BaseHost
+IpFact.credential [1] -- vyos::Credential
+IpFact.interface [1] -- vyos::Interface
+
+implementation wireup_ipfact for IpFact:
+    self.host=interface.host
+    self.credential=self.host.credential
+    self.id = interface.name
+    self.device = self.host.name
+end
+
+implement IpFact using wireup_ipfact
