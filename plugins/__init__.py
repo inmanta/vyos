@@ -66,7 +66,7 @@ class IpFact(PurgeableResource):
 
     @staticmethod
     def get_interface(_, obj):
-        return obj.interface.name 
+        return obj.interface.name
 
     @staticmethod
     def get_credential(_, obj):
@@ -103,6 +103,8 @@ class VyosBaseHandler(CRUDHandler):
 
     def post(self, ctx: HandlerContext, resource: Config) -> None:
         if self.connection:
+            # Vyos cannot logout before exiting configuration mode
+            self.connection.exit(force=True)
             self.connection.logout()
 
     def _execute_command(self, vyos, command, terminator):
@@ -128,7 +130,7 @@ class VyosBaseHandler(CRUDHandler):
 
 @provider("vyos::Config", name="sshconfig")
 class VyosHandler(VyosBaseHandler):
-    
+
     @cache(timeout=60, for_version=True)
     def get_versioned_cache(self, version):
         # rely on built in cache mechanism to clean up
@@ -356,7 +358,7 @@ class KeyGenHandler(VyosBaseHandler):
     def read_resource(self, ctx: HandlerContext, resource: Config) -> None:
         self.get_pubkey(ctx, resource)
 
-    
+
     def create_resource(self, ctx: HandlerContext, resource: Config) -> None:
         vyos = self.get_connection(ctx, resource.id.version, resource)
         cmd = "generate vpn rsa-key bits 2048 random /dev/urandom"
@@ -387,29 +389,29 @@ class IpFactHandler(VyosBaseHandler):
 
     def facts(self, ctx: HandlerContext, resource: IpFact) -> None:
     # example output
-    # vyos@vyos:~$ show interfaces 
+    # vyos@vyos:~$ show interfaces
     # Codes: S - State, L - Link, u - Up, D - Down, A - Admin Down
     # Interface        IP Address                        S/L  Description
     # ---------        ----------                        ---  -----------
-    # eth0             10.0.0.7/24                       u/u  
-    # eth1             10.1.0.15/24                      u/u  
-    # lo               127.0.0.1/8                       u/u  
+    # eth0             10.0.0.7/24                       u/u
+    # eth1             10.1.0.15/24                      u/u
+    # lo               127.0.0.1/8                       u/u
     #                  ::1/128
         try:
 
             vyos = self.get_connection(ctx, resource.id.version, resource)
             cmd = "show interfaces"
-            interface = resource.interface 
+            interface = resource.interface
             result = vyos.run_op_mode_command(cmd).replace("\r","")
             ctx.debug("got result %(result)s", result=result, cmd=cmd)
 
             parsed_lines = [self.parse_line(line) for line in result.split("\n")]
             parsed_lines = [line for line in parsed_lines if line is not None]
 
-            # find right lines    
+            # find right lines
             ips = itertools.dropwhile(lambda x:x[0] != interface, parsed_lines)
             ips = list(itertools.takewhile(lambda x:x[0] == interface or not x[0], ips))
-        
+
             ctx.debug("got ips %(ips)s", ips=ips)
 
             ips = [ip[1] for ip in ips]
@@ -427,4 +429,3 @@ class IpFactHandler(VyosBaseHandler):
                 return out
         finally:
             self.post(ctx, resource)
-        
