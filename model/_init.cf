@@ -262,6 +262,9 @@ implementation ospf for Ospf:
         purged=self.purged,
         purge_on_delete=self.purge_on_delete
     )
+    for redistribute in redistributes:
+        self.config.requires += redistribute.requires
+    end
 end
 
 implementation tunnel for Tunnel:
