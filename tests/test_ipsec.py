@@ -20,7 +20,6 @@ def test_ipsec_options(project, vy_host, console: vymgmt.Router):
         host=r1,
         purged={convert_bool(purge)},
         ipsec_interfaces=["eth1", "eth2"],
-        log_modes=["crypt", "control"],
         nat_traversal=true,
         allowed_nat_networks=["192.168.10.0/24", ]
     )

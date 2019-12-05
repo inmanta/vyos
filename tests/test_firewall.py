@@ -127,7 +127,6 @@ def test_firewall(project, vy_host, clear):
     interface_cfg = interface.config.splitlines()
     assert "interfaces ethernet eth1 address 192.168.5.3/24" in interface_cfg
     assert "interfaces ethernet eth1 duplex auto" in interface_cfg
-    assert "interfaces ethernet eth1 smp_affinity auto" in interface_cfg
     assert "interfaces ethernet eth1 speed auto" in interface_cfg
     assert "interfaces ethernet eth1 firewall in name test-set-1" in interface_cfg
     assert "interfaces ethernet eth1 firewall out name test-set-1" in interface_cfg
