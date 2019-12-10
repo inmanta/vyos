@@ -223,7 +223,8 @@ implementation iface for Interface:
         config=std::template("vyos/interface.j2"),
         requires=[self.host.requires, self.requires],
         provides=self.provides,
-        purged=self.purged
+        purged=self.purged,
+        ignore_keys=["interfaces ethernet {{ name }} smp_affinity"]
     )
     if self.inbound_ruleset is defined:
         self.config.requires += self.inbound_ruleset.config

@@ -381,9 +381,16 @@ class KeyGenHandler(VyosBaseHandler):
 
     def create_resource(self, ctx: HandlerContext, resource: Config) -> None:
         vyos = self.get_connection(ctx, resource.id.version, resource)
-        cmd = "generate vpn rsa-key bits 2048"
+        
+        # try old command first, new one hangs due to insufficient entropy
+        cmd = "generate vpn rsa-key bits 2048 random /dev/urandom"
         result = vyos.run_op_mode_command(cmd)
+        if "Invalid command:" in result:
+            cmd = "generate vpn rsa-key bits 2048"
+            result = vyos.run_op_mode_command(cmd)
+
         ctx.debug("got result %(result)s", result=result, cmd=cmd)
+
         assert "has been generated" in result
 
     def facts(self, ctx: HandlerContext, resource: Config) -> None:
