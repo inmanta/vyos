@@ -358,7 +358,7 @@ class KeyGenHandler(VyosBaseHandler):
         vyos = self.get_connection(ctx, resource.id.version, resource)
         cmd = "TERM=ansi show vpn ike rsa-keys"
         try:
-            result = vyos.run_op_mode_command(cmd).replace("\r","").replace('\x1b[m',"")
+            result = re.sub('\x1b\\[[0-9]?[a-zA-Z]',"",vyos.run_op_mode_command(cmd).replace("\r",""))
         except vymgmt.router.VyOSError :
             ctx.debug("got raw raw result %(result)s", result=vyos._Router__conn.before.decode("utf-8"), cmd=cmd)
             raise
