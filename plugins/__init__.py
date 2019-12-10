@@ -414,7 +414,7 @@ class IpFactHandler(VyosBaseHandler):
         if parts[1] == "-":
             return None
         else:
-            return (parts[0].strip(), re.sub(r'\x1b\[m',r'',parts[1].strip()))
+            return (parts[0].replace('\x1b[m',"").strip(), parts[1].replace('\x1b[m',"").strip())
 
     def facts(self, ctx: HandlerContext, resource: IpFact) -> None:
     # example output
