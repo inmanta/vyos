@@ -11,7 +11,7 @@ import net
 import vyos::routemap
 import vyos::firewall
 
-os = std::OS(family=std::linux, name="vyos", version=1.1)
+os = std::OS(family=std::linux, name="vyos")
 
 typedef area as number matching self >= 0 and self < 4294967296
 typedef smp_affinity as string matching /^auto|[0-9a-fA-F]+(,[0-9a-fA-F]+)?$/ 
