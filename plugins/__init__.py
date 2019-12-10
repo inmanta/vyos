@@ -95,6 +95,9 @@ class VyosBaseHandler(CRUDHandler):
         vyos = Router(cred["address"], cred["user"], cred["password"], cred["port"])
         try:
             vyos.login()
+            # prevent bugs where it is reported that
+            # terminal is not fully functional
+            vyos.run_op_mode_command("export TERM=ansi")
         except pexpect.pxssh.ExceptionPxssh:
             ctx.exception("Failed to connect to host")
             raise SkipResource("Host not available (yet)")
@@ -110,26 +113,27 @@ class VyosBaseHandler(CRUDHandler):
             except:
                 ctx.exception("Failed to close connection")
 
-    def _execute_command(self, ctx: HandlerContext, vyos, command, terminator):
+    def _execute_command(self, ctx: HandlerContext, vyos, command, terminator, timeout=10):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
         conn = vyos._Router__conn
 
         conn.sendline(command)
 
-        i = conn.expect([terminator, TIMEOUT], timeout=30)
-
-        if not i==0:
-            ctx.debug("got raw result %(result)s", result=conn.before.decode(), cmd=command)
-
-            raise vymgmt.VyOSError("Connection timed out")
+        i = conn.expect([terminator, TIMEOUT], timeout=timeout)
 
         output = conn.before
 
-        if not conn.prompt():
-            raise vymgmt.VyOSError("Connection timed out")
-
         if isinstance(output, bytes):
             output = output.decode("utf-8")
+
+        if not i==0:
+            ctx.debug("got raw result %(result)s", result=conn.before.decode(), cmd=command)
+            raise vymgmt.VyOSError("Connection timed out")
+
+        if not conn.prompt():
+            ctx.debug("got raw result %(result)s", result=conn.before.decode(), cmd=command)
+            raise vymgmt.VyOSError("Connection timed out")
+
         return output
 
 
@@ -254,24 +258,28 @@ class VyosHandler(VyosBaseHandler):
     def _execute(self, ctx: HandlerContext, resource: Config, delete: bool) -> None:
         commands = [x for x in resource.config.split("\n") if len(x) > 0]
         vyos = self.get_connection(ctx, resource.id.version, resource)
-        vyos.configure()
-        if delete and not resource.never_delete:
-            ctx.debug("Deleting %(node)s", node=resource.node)
-            vyos.delete(resource.node)
+        try:
+            vyos.configure()
+            if delete and not resource.never_delete:
+                ctx.debug("Deleting %(node)s", node=resource.node)
+                vyos.delete(resource.node)
 
-        for cmd in commands:
-            ctx.debug("Setting %(cmd)s", cmd=cmd)
-            if delete and resource.never_delete:
-                try:
-                    vyos.delete(cmd)
-                except vymgmt.ConfigError:
-                    pass
-            vyos.set(cmd)
+            for cmd in commands:
+                ctx.debug("Setting %(cmd)s", cmd=cmd)
+                if delete and resource.never_delete:
+                    try:
+                        vyos.delete(cmd)
+                    except vymgmt.ConfigError:
+                        pass
+                vyos.set(cmd)
 
-        vyos.commit()
-        if resource.save:
-            vyos.save()
-        vyos.exit(force=True)
+            vyos.commit()
+            if resource.save:
+                vyos.save()
+            vyos.exit(force=True)
+        except vymgmt.router.VyOSError :
+            ctx.debug("got raw raw result %(result)s", result=vyos._Router__conn.before.decode("utf-8"), cmd=cmd)
+            raise
 
     def read_resource(self, ctx: HandlerContext, resource: Config) -> None:
         if resource.facts:
@@ -350,9 +358,9 @@ class KeyGenHandler(VyosBaseHandler):
         vyos = self.get_connection(ctx, resource.id.version, resource)
         cmd = "TERM=ansi show vpn ike rsa-keys"
         try:
-            result = vyos.run_op_mode_command(cmd).replace("\r","")
+            result = vyos.run_op_mode_command(cmd).replace("\r","").replace('\x1b[m',"")
         except vymgmt.router.VyOSError :
-            ctx.debug("got raw raw result %(result)s", result=vyos._Router__conn.before.decode(), cmd=cmd)
+            ctx.debug("got raw raw result %(result)s", result=vyos._Router__conn.before.decode("utf-8"), cmd=cmd)
             raise
         ctx.debug("got raw result %(result)s", result=result, cmd=cmd)
 
