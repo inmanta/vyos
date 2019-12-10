@@ -10,6 +10,7 @@ import vyos
 
 entity IPSECOptions extends ConfigNode:
     string[] ipsec_interfaces=[]
+    string[] log_modes=[]
     bool nat_traversal=false
     ip::cidr[] allowed_nat_networks=[]
 end
