@@ -11,10 +11,9 @@ import net
 import vyos::routemap
 import vyos::firewall
 
-os = std::OS(family=std::linux, name="vyos", version=1.1)
+os = std::OS(family=std::linux, name="vyos")
 
 typedef area as number matching self >= 0 and self < 4294967296
-typedef smp_affinity as string matching /^auto|[0-9a-fA-F]+(,[0-9a-fA-F]+)?$/ 
 typedef duplex as string matching self == "auto" or self == "half" or self == "full"
 typedef speed as string matching self in ["10", "100", "1000", "2500","10000", "auto"]
 
@@ -132,7 +131,6 @@ entity Interface extends BaseInterface:
     bool never_delete=false
     duplex duplex="auto"
     speed speed="auto"
-    smp_affinity smp_affinity="auto"
 end
 
 Interface.inbound_ruleset [0:1] -- vyos::firewall::RuleSet
@@ -225,7 +223,8 @@ implementation iface for Interface:
         config=std::template("vyos/interface.j2"),
         requires=[self.host.requires, self.requires],
         provides=self.provides,
-        purged=self.purged
+        purged=self.purged,
+        ignore_keys=["interfaces ethernet {{ name }} smp_affinity"]
     )
     if self.inbound_ruleset is defined:
         self.config.requires += self.inbound_ruleset.config

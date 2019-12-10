@@ -95,6 +95,9 @@ class VyosBaseHandler(CRUDHandler):
         vyos = Router(cred["address"], cred["user"], cred["password"], cred["port"])
         try:
             vyos.login()
+            # prevent bugs where it is reported that
+            # terminal is not fully functional
+            vyos.run_op_mode_command("export TERM=ansi")
         except pexpect.pxssh.ExceptionPxssh:
             ctx.exception("Failed to connect to host")
             raise SkipResource("Host not available (yet)")
@@ -110,24 +113,27 @@ class VyosBaseHandler(CRUDHandler):
             except:
                 ctx.exception("Failed to close connection")
 
-    def _execute_command(self, vyos, command, terminator):
+    def _execute_command(self, ctx: HandlerContext, vyos, command, terminator, timeout=10):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
         conn = vyos._Router__conn
 
         conn.sendline(command)
 
-        i = conn.expect([terminator, TIMEOUT], timeout=30)
-
-        if not i==0:
-            raise vymgmt.VyOSError("Connection timed out")
+        i = conn.expect([terminator, TIMEOUT], timeout=timeout)
 
         output = conn.before
 
-        if not conn.prompt():
-            raise vymgmt.VyOSError("Connection timed out")
-
         if isinstance(output, bytes):
             output = output.decode("utf-8")
+
+        if not i==0:
+            ctx.debug("got raw result %(result)s", result=conn.before.decode(), cmd=command)
+            raise vymgmt.VyOSError("Connection timed out")
+
+        if not conn.prompt():
+            ctx.debug("got raw result %(result)s", result=conn.before.decode(), cmd=command)
+            raise vymgmt.VyOSError("Connection timed out")
+
         return output
 
 
@@ -153,7 +159,7 @@ class VyosHandler(VyosBaseHandler):
 
         # vyos.configure() breaks unique prompt, causing config transfer to fail
         command = "cat /tmp/inmanta_tmp; echo 'END PRINT'"
-        config = self._execute_command(vyos, command, "END PRINT\r\n")
+        config = self._execute_command(ctx, vyos, command, "END PRINT\r\n")
         config = config.replace("\r", "")
         config = config.replace(command,"")
         ctx.debug("Got raw config", config=config)
@@ -252,24 +258,28 @@ class VyosHandler(VyosBaseHandler):
     def _execute(self, ctx: HandlerContext, resource: Config, delete: bool) -> None:
         commands = [x for x in resource.config.split("\n") if len(x) > 0]
         vyos = self.get_connection(ctx, resource.id.version, resource)
-        vyos.configure()
-        if delete and not resource.never_delete:
-            ctx.debug("Deleting %(node)s", node=resource.node)
-            vyos.delete(resource.node)
+        try:
+            vyos.configure()
+            if delete and not resource.never_delete:
+                ctx.debug("Deleting %(node)s", node=resource.node)
+                vyos.delete(resource.node)
 
-        for cmd in commands:
-            ctx.debug("Setting %(cmd)s", cmd=cmd)
-            if delete and resource.never_delete:
-                try:
-                    vyos.delete(cmd)
-                except vymgmt.ConfigError:
-                    pass
-            vyos.set(cmd)
+            for cmd in commands:
+                ctx.debug("Setting %(cmd)s", cmd=cmd)
+                if delete and resource.never_delete:
+                    try:
+                        vyos.delete(cmd)
+                    except vymgmt.ConfigError:
+                        pass
+                vyos.set(cmd)
 
-        vyos.commit()
-        if resource.save:
-            vyos.save()
-        vyos.exit(force=True)
+            vyos.commit()
+            if resource.save:
+                vyos.save()
+            vyos.exit(force=True)
+        except vymgmt.router.VyOSError :
+            ctx.debug("got raw raw result %(result)s", result=vyos._Router__conn.before.decode("utf-8"), cmd=cmd)
+            raise
 
     def read_resource(self, ctx: HandlerContext, resource: Config) -> None:
         if resource.facts:
@@ -346,15 +356,25 @@ class KeyGenHandler(VyosBaseHandler):
 
     def get_pubkey(self, ctx: HandlerContext, resource: Config) -> str:
         vyos = self.get_connection(ctx, resource.id.version, resource)
-        cmd = "sudo cat /opt/vyatta/etc/config/ipsec.d/rsa-keys/localhost.key | grep pubkey"
-        result = vyos.run_op_mode_command(cmd).replace("\r","")
-        # cut echo
-        idx = result.find("pubkey")
-        ctx.debug("got result before %(result)s %(idx)d", result=result, cmd=cmd, idx=idx)
-        if idx >= 0:
-            result = result[idx+len("pubkey"):]
-        ctx.debug("got result %(result)s", result=result, cmd=cmd)
-        if not "pubkey" in result:
+        cmd = "TERM=ansi show vpn ike rsa-keys"
+        try:
+            result = vyos.run_op_mode_command(cmd).replace("\r","").replace('\x1b[m',"")
+        except vymgmt.router.VyOSError :
+            ctx.debug("got raw raw result %(result)s", result=vyos._Router__conn.before.decode("utf-8"), cmd=cmd)
+            raise
+        ctx.debug("got raw result %(result)s", result=result, cmd=cmd)
+
+        marker = "Local public key (/config/ipsec.d/rsa-keys/localhost.key):"
+
+        if marker in result:
+            idx = result.find(marker)
+            result = result[idx+len(marker):]
+            if "====" in result:
+                idx = result.find("====")
+                result = result[:idx]
+            ctx.debug("got result %(result)s", result=result, cmd=cmd)
+            result = result.strip()
+        else:
             raise ResourcePurged()
         return result
 
@@ -364,16 +384,22 @@ class KeyGenHandler(VyosBaseHandler):
 
     def create_resource(self, ctx: HandlerContext, resource: Config) -> None:
         vyos = self.get_connection(ctx, resource.id.version, resource)
+        
+        # try old command first, new one hangs due to insufficient entropy
         cmd = "generate vpn rsa-key bits 2048 random /dev/urandom"
         result = vyos.run_op_mode_command(cmd)
+        if "Invalid command:" in result:
+            cmd = "generate vpn rsa-key bits 2048"
+            result = vyos.run_op_mode_command(cmd)
+
         ctx.debug("got result %(result)s", result=result, cmd=cmd)
+
         assert "has been generated" in result
 
     def facts(self, ctx: HandlerContext, resource: Config) -> None:
         try:
             pubkey = self.get_pubkey(ctx, resource)
-            key = pubkey.split("=")[1].strip()
-            return {"key": key}
+            return {"key": pubkey}
         finally:
             self.post(ctx, resource)
 
@@ -388,7 +414,7 @@ class IpFactHandler(VyosBaseHandler):
         if parts[1] == "-":
             return None
         else:
-            return (parts[0].strip(), re.sub(r'\x1b\[m',r'',parts[1].strip()))
+            return (parts[0].replace('\x1b[m',"").strip(), parts[1].replace('\x1b[m',"").strip())
 
     def facts(self, ctx: HandlerContext, resource: IpFact) -> None:
     # example output

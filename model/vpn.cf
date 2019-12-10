@@ -8,11 +8,9 @@
 import ip
 import vyos
 
-typedef logmode_t as string matching self in ["raw" , "crypt", "parsing", "emitting", "control", "all", "private"]
-
 entity IPSECOptions extends ConfigNode:
     string[] ipsec_interfaces=[]
-    logmode_t[] log_modes=[]
+    string[] log_modes=[]
     bool nat_traversal=false
     ip::cidr[] allowed_nat_networks=[]
 end
