@@ -346,31 +346,20 @@ class KeyGenHandler(VyosBaseHandler):
 
     def get_pubkey(self, ctx: HandlerContext, resource: Config) -> str:
         vyos = self.get_connection(ctx, resource.id.version, resource)
-        # two possible formats
-        # mind the echo
-        cmd = "sudo cat /opt/vyatta/etc/config/ipsec.d/rsa-keys/localhost.key /config/ipsec.d/rsa-keys/localhost.key | grep -e ubkey -e \"RSA PRIVATE KEY\""
+        cmd = "show vpn ike rsa-keys"
         result = vyos.run_op_mode_command(cmd).replace("\r","")
-        if "BEGIN RSA PRIVATE KEY" in result:
-            # new format, convert private to public
-            cmd = "sudo openssl rsa -in /opt/vyatta/etc/config/ipsec.d/rsa-keys/localhost.key -pubout"
-            result = vyos.run_op_mode_command(cmd).replace("\r","")
-            ctx.debug("got raw result %(result)s", result=result, cmd=cmd)
-            start_marker="-----BEGIN PUBLIC KEY-----\n"
-            end_marker="-----END PUBLIC KEY-----\n"
-            start_index = result.find(start_marker)
-            end_index = result.find(end_marker)
-            assert start_index >= 0
-            assert end_index >= 0
-            result = result[start_index+len(start_marker):end_index].replace("\n","")
+        ctx.debug("got raw result %(result)s", result=result, cmd=cmd)
+
+        marker = "Local public key (/config/ipsec.d/rsa-keys/localhost.key):"
+
+        if marker in result:
+            idx = result.find(marker)
+            result = result[idx+len(marker):]
+            if "====" in result:
+                idx = result.find("====")
+                result = result[:idx]
             ctx.debug("got result %(result)s", result=result, cmd=cmd)
-        elif "pubkey" in result:
-            # cut echo
-            idx = result.find("pubkey")
-            ctx.debug("got result before %(result)s %(idx)d", result=result, cmd=cmd, idx=idx)
-            if idx >= 0:
-                result = result[idx+len("pubkey"):]
-            ctx.debug("got result %(result)s", result=result, cmd=cmd)
-            result = result.split("=")[1].strip()
+            result = result.strip()
         else:
             raise ResourcePurged()
         return result
