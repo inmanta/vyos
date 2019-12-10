@@ -110,7 +110,7 @@ class VyosBaseHandler(CRUDHandler):
             except:
                 ctx.exception("Failed to close connection")
 
-    def _execute_command(self, vyos, command, terminator):
+    def _execute_command(self, ctx: HandlerContext, vyos, command, terminator):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
         conn = vyos._Router__conn
 
@@ -119,6 +119,8 @@ class VyosBaseHandler(CRUDHandler):
         i = conn.expect([terminator, TIMEOUT], timeout=30)
 
         if not i==0:
+            ctx.debug("got raw result %(result)s", result=conn.before.decode(), cmd=command)
+
             raise vymgmt.VyOSError("Connection timed out")
 
         output = conn.before
@@ -153,7 +155,7 @@ class VyosHandler(VyosBaseHandler):
 
         # vyos.configure() breaks unique prompt, causing config transfer to fail
         command = "cat /tmp/inmanta_tmp; echo 'END PRINT'"
-        config = self._execute_command(vyos, command, "END PRINT\r\n")
+        config = self._execute_command(ctx, vyos, command, "END PRINT\r\n")
         config = config.replace("\r", "")
         config = config.replace(command,"")
         ctx.debug("Got raw config", config=config)
@@ -346,8 +348,12 @@ class KeyGenHandler(VyosBaseHandler):
 
     def get_pubkey(self, ctx: HandlerContext, resource: Config) -> str:
         vyos = self.get_connection(ctx, resource.id.version, resource)
-        cmd = "show vpn ike rsa-keys"
-        result = vyos.run_op_mode_command(cmd).replace("\r","")
+        cmd = "TERM=ansi show vpn ike rsa-keys"
+        try:
+            result = vyos.run_op_mode_command(cmd).replace("\r","")
+        except vymgmt.router.VyOSError :
+            ctx.debug("got raw raw result %(result)s", result=vyos._Router__conn.before.decode(), cmd=cmd)
+            raise
         ctx.debug("got raw result %(result)s", result=result, cmd=cmd)
 
         marker = "Local public key (/config/ipsec.d/rsa-keys/localhost.key):"
