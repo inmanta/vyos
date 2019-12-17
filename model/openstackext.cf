@@ -9,7 +9,7 @@ entity OpenstackHost extends vyos::BaseHost, openstack::Host:
 end
 
 implementation openstackConfig for OpenstackHost:
-    self.image = openstack::find_image(provider, vyos::os)
+    self.image = openstack::find_image(provider, self.os)
 end
 
 
