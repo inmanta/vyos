@@ -12,6 +12,8 @@ import vyos::routemap
 import vyos::firewall
 
 os = std::OS(family=std::linux, name="vyos")
+vyos=os
+vyos_12 = std::OS(family=vyos, name="vyos", version=1.2)
 
 typedef area as number matching self >= 0 and self < 4294967296
 typedef duplex as string matching self == "auto" or self == "half" or self == "full"
@@ -84,7 +86,7 @@ end
 
 implementation vyosConfig for BaseHost:
     std::AgentConfig(autostart=true, agentname=name, uri="local:", provides=self)
-    self.os = vyos::os
+    self.os = vyos::vyos_12
 end
 
 implementation commonConfig for BaseHost:

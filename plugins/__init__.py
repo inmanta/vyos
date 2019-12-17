@@ -110,6 +110,7 @@ class VyosBaseHandler(CRUDHandler):
                 # Vyos cannot logout before exiting configuration mode
                 self.connection.exit(force=True)
                 self.connection.logout()
+                self.connection = None
             except:
                 ctx.exception("Failed to close connection")
 
