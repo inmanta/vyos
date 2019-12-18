@@ -360,15 +360,20 @@ entity StaticRoute extends ConfigNode:
     number table=0
 end
 
+index StaticRoute(host, destination)
+
 implementation staticRouteDefault for StaticRoute:
-    self.node_name = "protocols static route {{destination}} next-hop {{ next_hop }}"
+    self.node_name = "protocols static route {{destination}}"
+    node_cfg = "protocols static route {{destination}} next-hop {{ next_hop }}"
+
     self.config = vyos::Config(
         device=self.host.name,
         node=self.node_name,
         credential=self.host.credential,
-        config=self.node_name,
+        config=node_cfg,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
+        purged=self.purged,
     )
 end
 
