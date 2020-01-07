@@ -28,7 +28,7 @@ entity Config extends ConfigItem, std::PurgeableResource:
     """
         VYOS config block resource
 
-        This is the central resource, that is used to deploy specific configlets. 
+        This is the central resource, that is used to deploy specific configlets.
 
         :attr keys_only: Only compare these keys, ignore all other keys that are in the current state
         :attr ignore_keys: Ignore these keys in the current state
@@ -77,7 +77,7 @@ entity BaseHost extends ip::Host:
     """
     string user="inmanta"
     string password="inmanta"
-    number port=22    
+    number port=22
 end
 
 entity Host extends BaseHost:
@@ -160,17 +160,17 @@ implement Masquerade using masq
 implementation masq for Masquerade:
     self.node_name = "nat source rule {{ rule }}"
     self.config = vyos::Config(
-        device=self.host.name, 
-        node=self.node_name, 
+        device=self.host.name,
+        node=self.node_name,
         credential=self.host.credential,
-        config=std::template("vyos/masq.j2"), 
+        config=std::template("vyos/masq.j2"),
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
     )
 end
 
-typedef tunnel_mtu_t as number matching self >= 64 and self <= 8024 
+typedef tunnel_mtu_t as number matching self >= 64 and self <= 8024
 typedef tunnel_encap_t as string matching self in ["gre", "gre-bridge", "ipip", "sit", "ipip6", "ip6ip6"]
 typedef tunnel_key_t as number matching self >= 0 and self <= 99999
 
@@ -188,7 +188,7 @@ typedef abrtype_t as string matching self in ["cisco", "ibm", "shortcut", "stand
 index Ospf(host)
 
 entity Ospf extends ConfigNode:
-    area area=0 
+    area area=0
     ip::cidr[] network
     ip::ip router_id
     string[]? passive_interfaces
@@ -219,8 +219,8 @@ BaseInterface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
 implementation iface for Interface:
     self.node_name = "interfaces ethernet {{ name }}"
     self.config = vyos::Config(
-        device=self.host.name, 
-        node=self.node_name, 
+        device=self.host.name,
+        node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/interface.j2"),
         requires=[self.host.requires, self.requires],
@@ -251,7 +251,7 @@ implementation loopback for Loopback:
     )
 end
 
-implementation ospf for Ospf:  
+implementation ospf for Ospf:
     self.node_name = "protocols ospf"
     self.config = vyos::Config(
         device=self.host.name,
@@ -279,7 +279,7 @@ implementation tunnel for Tunnel:
         provides=self.provides,
         purged=self.purged,
         purge_on_delete=self.purge_on_delete,
-    )    
+    )
 end
 
 implement Loopback using loopback
@@ -301,12 +301,12 @@ index Vif(parent, vlan)
 implementation vif for Vif:
     self.host = self.parent.host
     self.node_name = "{{ parent.node_name}} vif {{ vlan }}"
-    self.config = vyos::ExtraConfig(
+    extra_config = vyos::ExtraConfig(
         config=std::template("vyos/vif.j2"),
         requires=[self.requires, self.host.requires],
         provides=self.provides
     )
-    self.parent.config.extra = self.config
+    self.parent.config.extra = extra_config
 end
 
 
@@ -321,8 +321,8 @@ implement Bridge using bridge
 implementation bridge for Bridge:
     self.node_name = "interfaces bridge {{name}}"
     self.config = vyos::Config(
-        device=self.host.name, 
-        node=self.node_name, 
+        device=self.host.name,
+        node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/bridge.j2"),
         requires=[self.requires, self.host.requires]
@@ -382,8 +382,8 @@ implement StaticRoute using staticRouteDefault when table == 0
 implementation staticRouteTable for StaticRoute:
     self.node_name = "protocols static table {{ table }} route {{destination}} next-hop {{ next_hop }}"
     self.config = vyos::Config(
-        device=self.host.name, 
-        node=self.node_name, 
+        device=self.host.name,
+        node=self.node_name,
         credential=self.host.credential,
         config=self.node_name,
         requires=[self.host.requires, self.requires],
@@ -424,10 +424,10 @@ end
 implementation shaper for Shaper:
     self.node_name = "traffic-policy shaper {{ name }}"
     self.config = vyos::Config(
-        device=self.host.name, 
-        node=self.node_name, 
+        device=self.host.name,
+        node=self.node_name,
         credential=self.host.credential,
-        config=std::template("vyos/shaper.j2"), 
+        config=std::template("vyos/shaper.j2"),
         requires=[self.host.requires, self.requires],
         provides=self.provides,
     )
@@ -452,10 +452,10 @@ index Hostname(host)
 implementation hostname for Hostname:
     self.node_name = "system host-name"
     self.config = vyos::Config(
-        device=self.host.name, 
-        node=self.node_name, 
+        device=self.host.name,
+        node=self.node_name,
         credential=self.host.credential,
-        config=std::template("vyos/hostname.j2"), 
+        config=std::template("vyos/hostname.j2"),
         requires=[self.host.requires, self.requires],
         provides=self.provides
     )
