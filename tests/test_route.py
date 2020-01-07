@@ -1,9 +1,11 @@
 def convert_bool(val):
     return "true" if val else "false"
 
+
 def test_static_route(project, vy_host, clear):
     def make_config(purge=False):
-        project.compile(f"""
+        project.compile(
+            f"""
     import vyos
     import vyos::vpn
 
@@ -16,11 +18,11 @@ def test_static_route(project, vy_host, clear):
     vyos::StaticRoute(
         host=r1,
         next_hop = "10.100.100.1",
-        destination= "10.100.100.1/32", 
+        destination= "10.100.100.1/32",
         purged={convert_bool(purge)}
     )
-        """)
-
+        """
+        )
 
     make_config()
 
@@ -32,7 +34,6 @@ def test_static_route(project, vy_host, clear):
 
     compare = project.dryrun_resource("vyos::Config")
     assert len(compare) == 0
-
 
     make_config(purge=True)
 

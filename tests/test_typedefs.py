@@ -1,7 +1,9 @@
-import pytest 
+import pytest
+
 
 def test_speed(project):
-    project.compile(f"""
+    project.compile(
+        f"""
 import vyos
 
 entity Tester:
@@ -13,11 +15,13 @@ implement Tester using std::none
 Tester(value="10")
 Tester(value="auto")
 Tester(value="2500")
-""")
+"""
+    )
 
     with pytest.raises(Exception):
 
-        project.compile(f"""
+        project.compile(
+            f"""
     import vyos
 
     entity Tester:
@@ -27,4 +31,5 @@ Tester(value="2500")
     implement Tester using std::none
 
     Tester(value="75")
-    """)
+    """
+        )

@@ -1,12 +1,15 @@
-import inmanta.agent.handler
 import random
 import string
 
+import inmanta.agent.handler
+
+
 def test_basics(project, vy_host):
 
-    hostname = ''.join(random.choice(string.ascii_letters) for x in range(10))
+    hostname = "".join(random.choice(string.ascii_letters) for x in range(10))
 
-    project.compile(f"""
+    project.compile(
+        f"""
 import vyos
 
 r1 = vyos::Host(
@@ -17,8 +20,9 @@ r1 = vyos::Host(
     )
 
 vyos::Hostname(host=r1, name=r1.name)
-""")
-    
+"""
+    )
+
     resource = project.get_resource("vyos::Config")
     handler = project.get_handler(resource, False)
 
@@ -32,5 +36,3 @@ vyos::Hostname(host=r1, name=r1.name)
 
     compare = project.dryrun_resource("vyos::Config")
     assert "system host-name" in compare
-
-

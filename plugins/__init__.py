@@ -5,28 +5,50 @@
     :contact: code@inmanta.com
     :license: Inmanta EULA
 """
-import re
 import itertools
+import re
+from typing import Tuple
 
-from inmanta.resources import resource, PurgeableResource, Resource
-from inmanta.agent.handler import provider, CRUDHandler, HandlerContext, cache, ResourcePurged, SkipResource
+from inmanta.agent.handler import (
+    CRUDHandler,
+    HandlerContext,
+    ResourcePurged,
+    SkipResource,
+    cache,
+    provider,
+)
+from inmanta.resources import PurgeableResource, resource
 
-import vymgmt
-import vyattaconfparser
 import pexpect
-from pexpect.exceptions import TIMEOUT
+import vyattaconfparser
+import vymgmt
 from pexpect import pxssh
+from pexpect.exceptions import TIMEOUT
 
 
 @resource("vyos::Config", id_attribute="nodeid", agent="device")
 class Config(PurgeableResource):
-    fields = ("node", "config", "credential", "never_delete", "save", "keys_only", "ignore_keys", "device", "facts")
+    fields = (
+        "node",
+        "config",
+        "credential",
+        "never_delete",
+        "save",
+        "keys_only",
+        "ignore_keys",
+        "device",
+        "facts",
+    )
 
     @staticmethod
     def get_credential(_, obj):
         obj = obj.credential
-        return {"user": obj.user, "password": obj.password, "port": obj.port,
-                "address": obj.address}
+        return {
+            "user": obj.user,
+            "password": obj.password,
+            "port": obj.port,
+            "address": obj.address,
+        }
 
     @staticmethod
     def get_nodeid(_, obj):
@@ -55,14 +77,17 @@ class KeyGen(PurgeableResource):
     @staticmethod
     def get_credential(_, obj):
         obj = obj.credential
-        return {"user": obj.user, "password": obj.password, "port": obj.port,
-                "address": obj.address}
-
+        return {
+            "user": obj.user,
+            "password": obj.password,
+            "port": obj.port,
+            "address": obj.address,
+        }
 
 
 @resource("vyos::IpFact", id_attribute="id", agent="device")
 class IpFact(PurgeableResource):
-    fields = ("credential","interface")
+    fields = ("credential", "interface")
 
     @staticmethod
     def get_interface(_, obj):
@@ -71,18 +96,28 @@ class IpFact(PurgeableResource):
     @staticmethod
     def get_credential(_, obj):
         obj = obj.credential
-        return {"user": obj.user, "password": obj.password, "port": obj.port,
-                "address": obj.address}
+        return {
+            "user": obj.user,
+            "password": obj.password,
+            "port": obj.port,
+            "address": obj.address,
+        }
+
 
 class Router(vymgmt.Router):
     def login(self):
         self.__conn = pxssh.pxssh()
-        self.__conn.login(self.__address, self.__user, password=self.__password, port=self.__port, sync_original_prompt=False)
+        self.__conn.login(
+            self.__address,
+            self.__user,
+            password=self.__password,
+            port=self.__port,
+            sync_original_prompt=False,
+        )
         self.__logged_in = True
 
 
 class VyosBaseHandler(CRUDHandler):
-
     def __init__(self, agent, io=None):
         CRUDHandler.__init__(self, agent, io)
         self.connection = None
@@ -111,10 +146,12 @@ class VyosBaseHandler(CRUDHandler):
                 self.connection.exit(force=True)
                 self.connection.logout()
                 self.connection = None
-            except:
+            except:  # noqa: E722
                 ctx.exception("Failed to close connection")
 
-    def _execute_command(self, ctx: HandlerContext, vyos, command, terminator, timeout=10):
+    def _execute_command(
+        self, ctx: HandlerContext, vyos, command, terminator, timeout=10
+    ):
         """Patch for wonky behavior of vymgmt, after exit it can no longer use the unique prompt"""
         conn = vyos._Router__conn
 
@@ -127,12 +164,16 @@ class VyosBaseHandler(CRUDHandler):
         if isinstance(output, bytes):
             output = output.decode("utf-8")
 
-        if not i==0:
-            ctx.debug("got raw result %(result)s", result=conn.before.decode(), cmd=command)
+        if not i == 0:
+            ctx.debug(
+                "got raw result %(result)s", result=conn.before.decode(), cmd=command
+            )
             raise vymgmt.VyOSError("Connection timed out")
 
         if not conn.prompt():
-            ctx.debug("got raw result %(result)s", result=conn.before.decode(), cmd=command)
+            ctx.debug(
+                "got raw result %(result)s", result=conn.before.decode(), cmd=command
+            )
             raise vymgmt.VyOSError("Connection timed out")
 
         return output
@@ -140,7 +181,6 @@ class VyosBaseHandler(CRUDHandler):
 
 @provider("vyos::Config", name="sshconfig")
 class VyosHandler(VyosBaseHandler):
-
     @cache(timeout=60, for_version=True)
     def get_versioned_cache(self, version):
         # rely on built in cache mechanism to clean up
@@ -162,7 +202,7 @@ class VyosHandler(VyosBaseHandler):
         command = "cat /tmp/inmanta_tmp; echo 'END PRINT'"
         config = self._execute_command(ctx, vyos, command, "END PRINT\r\n")
         config = config.replace("\r", "")
-        config = config.replace(command,"")
+        config = config.replace(command, "")
         ctx.debug("Got raw config", config=config)
         conf_dict = vyattaconfparser.parse_conf(config)
         cache[resource.device] = conf_dict
@@ -202,7 +242,7 @@ class VyosHandler(VyosBaseHandler):
                 return not ignore
             if new[k] is None:
                 return False
-            return old[k] != new [k]
+            return old[k] != new[k]
 
         def get_old_value(k):
             if k not in old:
@@ -215,7 +255,11 @@ class VyosHandler(VyosBaseHandler):
             value = new[k]
             return value
 
-        changed = {k:{"current": get_old_value(k), "desired":get_new_value(k)} for k in allkeys if is_diff(k)}
+        changed = {
+            k: {"current": get_old_value(k), "desired": get_new_value(k)}
+            for k in allkeys
+            if is_diff(k)
+        }
 
         return changed
 
@@ -240,7 +284,9 @@ class VyosHandler(VyosBaseHandler):
 
         ccfg = {}
         for key, value in current.config:
-            if key not in current.ignore_keys and (len(current.keys_only) == 0 or key in current.keys_only):
+            if key not in current.ignore_keys and (
+                len(current.keys_only) == 0 or key in current.keys_only
+            ):
                 if key in ccfg:
                     if isinstance(ccfg[key], str):
                         ccfg[key] = [ccfg[key], value]
@@ -278,8 +324,12 @@ class VyosHandler(VyosBaseHandler):
             if resource.save:
                 vyos.save()
             vyos.exit(force=True)
-        except vymgmt.router.VyOSError :
-            ctx.debug("got raw raw result %(result)s", result=vyos._Router__conn.before.decode("utf-8"), cmd=cmd)
+        except vymgmt.router.VyOSError:
+            ctx.debug(
+                "got raw raw result %(result)s",
+                result=vyos._Router__conn.before.decode("utf-8"),
+                cmd=cmd,
+            )
             raise
 
     def read_resource(self, ctx: HandlerContext, resource: Config) -> None:
@@ -287,19 +337,24 @@ class VyosHandler(VyosBaseHandler):
             return
         vyos = self.get_connection(ctx, resource.id.version, resource)
         current = self.get_config_dict(ctx, resource, vyos)
-        keys = resource.node.split(" ")
 
         cfg = current
         for key in resource.node.split(" "):
             if isinstance(cfg, str):
-                cfg = {cfg:{}}
+                cfg = {cfg: {}}
                 break
             elif key in cfg:
                 cfg = cfg[key]
             else:
                 raise ResourcePurged()
 
-        ctx.debug("Comparing desired with current", desired=resource.config, current=cfg, node=resource.node, raw_current=current)
+        ctx.debug(
+            "Comparing desired with current",
+            desired=resource.config,
+            current=cfg,
+            node=resource.node,
+            raw_current=current,
+        )
 
         current_cfg = self._dict_to_path(resource.node, cfg)
         ctx.debug("Current paths", path=current_cfg)
@@ -329,7 +384,9 @@ class VyosHandler(VyosBaseHandler):
         vyos.exit(force=True)
         ctx.set_purged()
 
-    def update_resource(self, ctx: HandlerContext, changes: dict, resource: Config) -> None:
+    def update_resource(
+        self, ctx: HandlerContext, changes: dict, resource: Config
+    ) -> None:
         if resource.facts:
             return
         ctx.debug("Updating resource, invalidating cache")
@@ -353,15 +410,21 @@ class VyosHandler(VyosBaseHandler):
 
 @provider("vyos::vpn::KeyGen", name="keygen")
 class KeyGenHandler(VyosBaseHandler):
-
-
     def get_pubkey(self, ctx: HandlerContext, resource: Config) -> str:
         vyos = self.get_connection(ctx, resource.id.version, resource)
         cmd = "TERM=ansi show vpn ike rsa-keys"
         try:
-            result = re.sub('\x1b\\[[0-9]?[a-zA-Z]',"",vyos.run_op_mode_command(cmd).replace("\r",""))
-        except vymgmt.router.VyOSError :
-            ctx.debug("got raw raw result %(result)s", result=vyos._Router__conn.before.decode("utf-8"), cmd=cmd)
+            result = re.sub(
+                "\x1b\\[[0-9]?[a-zA-Z]",
+                "",
+                vyos.run_op_mode_command(cmd).replace("\r", ""),
+            )
+        except vymgmt.router.VyOSError:
+            ctx.debug(
+                "got raw raw result %(result)s",
+                result=vyos._Router__conn.before.decode("utf-8"),
+                cmd=cmd,
+            )
             raise
         ctx.debug("got raw result %(result)s", result=result, cmd=cmd)
 
@@ -369,7 +432,7 @@ class KeyGenHandler(VyosBaseHandler):
 
         if marker in result:
             idx = result.find(marker)
-            result = result[idx+len(marker):]
+            result = result[idx + len(marker) :]
             if "====" in result:
                 idx = result.find("====")
                 result = result[:idx]
@@ -382,10 +445,9 @@ class KeyGenHandler(VyosBaseHandler):
     def read_resource(self, ctx: HandlerContext, resource: Config) -> None:
         self.get_pubkey(ctx, resource)
 
-
     def create_resource(self, ctx: HandlerContext, resource: Config) -> None:
         vyos = self.get_connection(ctx, resource.id.version, resource)
-        
+
         # try old command first, new one hangs due to insufficient entropy
         cmd = "generate vpn rsa-key bits 2048 random /dev/urandom"
         result = vyos.run_op_mode_command(cmd)
@@ -407,40 +469,44 @@ class KeyGenHandler(VyosBaseHandler):
 
 @provider("vyos::IpFact", name="IpFact")
 class IpFactHandler(VyosBaseHandler):
-
-    def parse_line(self, line:str) -> "Tuple[str,str]":
+    def parse_line(self, line: str) -> Tuple[str, str]:
         parts = re.split(" +", line)
-        if len(parts)<2:
+        if len(parts) < 2:
             return None
         if parts[1] == "-":
             return None
         else:
-            return (parts[0].replace('\x1b[m',"").strip(), parts[1].replace('\x1b[m',"").strip())
+            return (
+                parts[0].replace("\x1b[m", "").strip(),
+                parts[1].replace("\x1b[m", "").strip(),
+            )
 
     def facts(self, ctx: HandlerContext, resource: IpFact) -> None:
-    # example output
-    # vyos@vyos:~$ show interfaces
-    # Codes: S - State, L - Link, u - Up, D - Down, A - Admin Down
-    # Interface        IP Address                        S/L  Description
-    # ---------        ----------                        ---  -----------
-    # eth0             10.0.0.7/24                       u/u
-    # eth1             10.1.0.15/24                      u/u
-    # lo               127.0.0.1/8                       u/u
-    #                  ::1/128
+        # example output
+        # vyos@vyos:~$ show interfaces
+        # Codes: S - State, L - Link, u - Up, D - Down, A - Admin Down
+        # Interface        IP Address                        S/L  Description
+        # ---------        ----------                        ---  -----------
+        # eth0             10.0.0.7/24                       u/u
+        # eth1             10.1.0.15/24                      u/u
+        # lo               127.0.0.1/8                       u/u
+        #                  ::1/128
         try:
 
             vyos = self.get_connection(ctx, resource.id.version, resource)
             cmd = "show interfaces"
             interface = resource.interface
-            result = vyos.run_op_mode_command(cmd).replace("\r","")
+            result = vyos.run_op_mode_command(cmd).replace("\r", "")
             ctx.debug("got result %(result)s", result=result, cmd=cmd)
 
             parsed_lines = [self.parse_line(line) for line in result.split("\n")]
             parsed_lines = [line for line in parsed_lines if line is not None]
 
             # find right lines
-            ips = itertools.dropwhile(lambda x:x[0] != interface, parsed_lines)
-            ips = list(itertools.takewhile(lambda x:x[0] == interface or not x[0], ips))
+            ips = itertools.dropwhile(lambda x: x[0] != interface, parsed_lines)
+            ips = list(
+                itertools.takewhile(lambda x: x[0] == interface or not x[0], ips)
+            )
 
             ctx.debug("got ips %(ips)s", ips=ips)
 
@@ -453,8 +519,8 @@ class IpFactHandler(VyosBaseHandler):
                 return {"ip_address": ips[0]}
             else:
                 ips = sorted(ips)
-                out =  {"ip_address": ips[0]}
-                for i,addr in enumerate(ips):
+                out = {"ip_address": ips[0]}
+                for i, addr in enumerate(ips):
                     out[f"ip_address_{i}"] = addr
                 return out
         finally:
