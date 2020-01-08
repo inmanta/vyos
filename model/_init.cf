@@ -301,12 +301,12 @@ index Vif(parent, vlan)
 implementation vif for Vif:
     self.host = self.parent.host
     self.node_name = "{{ parent.node_name}} vif {{ vlan }}"
-    extra_config = vyos::ExtraConfig(
+    self.config = vyos::ExtraConfig(
         config=std::template("vyos/vif.j2"),
         requires=[self.requires, self.host.requires],
         provides=self.provides
     )
-    self.parent.config.extra = extra_config
+    self.parent.config.extra = self.config
 end
 
 
