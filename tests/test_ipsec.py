@@ -1,12 +1,14 @@
 import vymgmt
 
+
 def convert_bool(val):
     return "true" if val else "false"
 
 
 def test_ipsec_options(project, vy_host, console: vymgmt.Router):
     def make_config(purge=False):
-        project.compile(f"""
+        project.compile(
+            f"""
     import vyos
     import vyos::vpn
 
@@ -23,7 +25,8 @@ def test_ipsec_options(project, vy_host, console: vymgmt.Router):
         nat_traversal=true,
         allowed_nat_networks=["192.168.10.0/24", ]
     )
-        """)
+        """
+        )
 
     console.configure()
     console.run_conf_mode_command("load /config/clear.config")

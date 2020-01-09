@@ -1,13 +1,14 @@
-import vymgmt
 from inmanta.agent import handler
 
 
 def convert_bool(val):
     return "true" if val else "false"
 
+
 def test_keygen(project, vy_host, clear):
     def make_config(purge=False):
-        project.compile(f"""
+        project.compile(
+            f"""
     import vyos
     import vyos::vpn
 
@@ -18,8 +19,8 @@ def test_keygen(project, vy_host, clear):
         ip="{vy_host}")
 
     vyos::vpn::KeyGen(host=r1)
-        """)
-
+        """
+        )
 
     make_config()
 

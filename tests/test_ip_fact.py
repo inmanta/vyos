@@ -1,15 +1,17 @@
-import vymgmt
 from inmanta.agent import handler
+
 import netaddr
-import pytest 
+
 
 def convert_bool(val):
     return "true" if val else "false"
 
+
 def test_ip_fact(project, vy_host, clear):
     def make_config(purge=False):
-        project.compile(f"""
-    import vyos 
+        project.compile(
+            f"""
+    import vyos
     import vyos::vpn
 
     r1 = vyos::Host(
@@ -25,11 +27,11 @@ def test_ip_fact(project, vy_host, clear):
     )
 
     vyos::IpFact(interface=itf)
-    """)
-
+    """
+        )
 
     make_config()
-    
+
     resource = project.get_resource("vyos::IpFact")
     myhandler = project.get_handler(resource, False)
     ctx = handler.HandlerContext(resource)
@@ -37,10 +39,12 @@ def test_ip_fact(project, vy_host, clear):
     assert "ip_address" in facts
     netaddr.IPNetwork(facts["ip_address"])
 
+
 def test_ip_fact_multi(project, vy_host, clear):
     def make_config(purge=False):
-        project.compile(f"""
-    import vyos 
+        project.compile(
+            f"""
+    import vyos
     import vyos::vpn
 
     r1 = vyos::Host(
@@ -61,11 +65,11 @@ def test_ip_fact_multi(project, vy_host, clear):
 
 
     vyos::IpFact(interface=itf)
-    """)
-
+    """
+        )
 
     make_config()
-    
+
     project.deploy_resource("vyos::Config")
 
     resource = project.get_resource("vyos::IpFact")
