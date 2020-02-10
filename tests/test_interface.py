@@ -67,7 +67,6 @@ def test_interface_and_vif(project, vy_host, clear):
         host=r1,
         name="eth1",
         address="192.168.5.3/24",
-       
     )
     vif = vyos::Vif(parent=itf, vlan=10, host=r1, purged={convert_bool(purge)},)
 
