@@ -67,9 +67,8 @@ def test_interface_and_vif(project, vy_host, clear):
         host=r1,
         name="eth1",
         address="192.168.5.3/24",
-        purged={convert_bool(purge)},
     )
-    vif = vyos::Vif(parent=itf, vlan=10, host=r1)
+    vif = vyos::Vif(parent=itf, vlan=10, host=r1, purged={convert_bool(purge)},)
 
     vif.addresses += vyos::Address(ip="192.168.7.3/24")
     vif.addresses += vyos::Address(ip="2a02:1810:bc04:5200::1/64")
@@ -103,9 +102,8 @@ def test_interface_and_vif(project, vy_host, clear):
         host=r1,
         name="eth1",
         address="192.168.5.3/24",
-        purged={convert_bool(purge)},
     )
-    vif = vyos::Vif(parent=itf, vlan=10, host=r1)
+    vif = vyos::Vif(parent=itf, vlan=10, host=r1, purged={convert_bool(purge)},)
 
     vif.addresses += vyos::Address(ip="192.168.7.3/24")
     """
@@ -128,7 +126,7 @@ def test_interface_and_vif(project, vy_host, clear):
 
     # pre delete
     compare = project.dryrun_resource("vyos::Config")
-    assert "purged" in compare
+    assert "interfaces ethernet eth1 vif 10 address" in compare
     assert len(compare) == 1
 
     # do delete
