@@ -9,7 +9,12 @@ pipeline {
     environment {
         INMANTA_MODULE_REPO='https://github.com/inmanta/'
         INMANTA_TEST_ENV="${env.WORKSPACE}/env"
-    } 
+    }
+
+    triggers {
+        pollSCM('* * * * *')
+        cron("H H(2-5) * * *")
+    }
 
     stages {
         stage('Test') {
