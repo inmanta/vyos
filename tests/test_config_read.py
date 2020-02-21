@@ -4,7 +4,7 @@ import string
 import inmanta.agent.handler
 
 
-def test_basics(project, vy_host):
+def test_basics(project, clear, vy_host):
 
     hostname = "".join(random.choice(string.ascii_letters) for x in range(10))
 
