@@ -138,9 +138,8 @@ def test_interface_and_vif(project, vy_host, clear):
 
 
 def test_interface_vif_with_policy_route(project, vy_host, clear):
-    def make_config(purge=False):
-        project.compile(
-            f"""
+    project.compile(
+        f"""
     import vyos
 
     r1 = vyos::Host(
@@ -155,7 +154,7 @@ def test_interface_vif_with_policy_route(project, vy_host, clear):
         address="192.168.5.3/24",
     )
 
-    vif = vyos::Vif(parent=itf, vlan=10, host=r1, purged={convert_bool(purge)})
+    vif = vyos::Vif(parent=itf, vlan=10, host=r1)
 
     vif.policy_route = vyos::PolicyRoute(
         host = r1,
@@ -163,31 +162,9 @@ def test_interface_vif_with_policy_route(project, vy_host, clear):
         rule = 1,
         table = 2,
     )
-            """,
-        )
-
-    make_config()
+        """,
+    )
 
     assert "interfaces ethernet eth1 vif 10 policy route T2" in project.get_resource(
         "vyos::Config", node="interfaces ethernet eth1",
     ).config.split("\n")
-
-    compare = project.dryrun_resource("vyos::Config")
-    assert "purged" in compare
-    assert len(compare) == 1
-
-    project.deploy_resource("vyos::Config")
-
-    compare = project.dryrun_resource("vyos::Config")
-    assert len(compare) == 0
-
-    make_config(purge=True)
-
-    compare = project.dryrun_resource("vyos::Config")
-    assert "purged" in compare
-    assert len(compare) == 1
-
-    project.deploy_resource("vyos::Config")
-
-    compare = project.dryrun_resource("vyos::Config")
-    assert len(compare) == 0
