@@ -130,6 +130,7 @@ entity BaseInterface extends ConfigNode:
 end
 
 BaseInterface.addresses [0:] -- Address
+BaseInterface.policy_route [0:1] -- PolicyRoute
 
 entity Interface extends BaseInterface:
     bool never_delete=false
@@ -217,6 +218,12 @@ implement OspfRedistribute using std::none
 
 BaseInterface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
 BaseInterface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
+
+implementation iface_policy_route for BaseInterface:
+    self.config.extra = ExtraConfig(
+        config = "{{ self.node_name }} policy route '{{ self.policy_route.name }}'"
+    )
+end
 
 implementation iface for Interface:
     self.node_name = "interfaces ethernet {{ name }}"
