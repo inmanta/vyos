@@ -75,14 +75,18 @@ def test_policy_route(project, vy_host, clear):
 
     make_config()
 
+    assert project.get_resource("vyos::Config").config.strip() == (
+        """
+policy route T2 rule 1 set table '2'
+policy route T2 rule 1 source address '192.168.100.104/29'
+policy route T2 rule 1 protocol 'tcp'
+policy route T2 rule 1 description 'my description'
+        """
+    ).strip()
+
     compare = project.dryrun_resource("vyos::Config")
-    assert "policy route T2 rule 1 set table" in compare
-    assert "policy route T2 rule 1 source address" in compare
-    assert "policy route T2 rule 1 destination address" in compare
-    assert "policy route T2 rule 1 protocol" in compare
-    assert "policy route T2 rule 1 description" in compare
     assert "purged" in compare
-    assert len(compare) == 6
+    assert len(compare) == 1
 
     project.deploy_resource("vyos::Config")
 
