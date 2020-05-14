@@ -144,7 +144,7 @@ Interface.inbound_ruleset [0:1] -- vyos::firewall::RuleSet
 Interface.local_ruleset [0:1] -- vyos::firewall::RuleSet
 Interface.outbound_ruleset [0:1] -- vyos::firewall::RuleSet
 
-implement Interface using iface
+implement Interface using parents, iface
 
 index Interface(host, name)
 
@@ -297,7 +297,7 @@ end
 
 implement Loopback using loopback
 implement Ospf using ospf
-implement Tunnel using tunnel
+implement Tunnel using parents, tunnel
 
 Vif.parent [1] -- Interface
 
@@ -307,7 +307,7 @@ entity Vif extends BaseInterface:
     string name=""
 end
 
-implement Vif using vif
+implement Vif using parents, vif
 
 index Vif(parent, vlan)
 
@@ -337,7 +337,7 @@ end
 
 BaseInterface.bridge_group [0:1] -- Bridge.interfaces [0:]
 
-implement Bridge using bridge
+implement Bridge using parents, bridge
 
 implementation bridge for Bridge:
     self.node_name = "interfaces bridge {{name}}"
