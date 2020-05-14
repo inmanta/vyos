@@ -72,9 +72,6 @@ def test_policy_route(
     protocol_is_set: bool,
     description_is_set: bool,
 ) -> None:
-    def unlines_optional(lines: Iterable[Optional[str]]) -> str:
-        return "\n".join(line for line in lines if line is not None)
-
     def make_config(purge=False):
         project.compile(
             f"""
@@ -131,7 +128,6 @@ def test_policy_route(
     project.deploy_resource("vyos::Config")
 
     compare = project.dryrun_resource("vyos::Config")
-    print(compare)
     assert len(compare) == 0
 
     make_config(purge=True)

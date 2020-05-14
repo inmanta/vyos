@@ -422,7 +422,7 @@ entity PolicyRoute extends ConfigNode:
     std::alfanum? description = null
 end
 
-implementation policyRoute for PolicyRoute:
+implementation policy_route for PolicyRoute:
     self.node_name = "policy route {{name}} rule {{rule}}"
     self.config = vyos::Config(
         device=self.host.name,
@@ -431,10 +431,11 @@ implementation policyRoute for PolicyRoute:
         config=std::template("vyos/policy_route.j2"),
         requires=[self.host.requires, self.requires],
         provides=self.provides,
+        purged=self.purged,
     )
 end
 
-implement PolicyRoute using policyRoute
+implement PolicyRoute using policy_route
 
 entity Shaper extends ConfigNode:
     string name
