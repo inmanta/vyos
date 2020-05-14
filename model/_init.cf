@@ -24,6 +24,20 @@ entity ConfigItem:
     string config
 end
 
+
+entity ExtraConfig extends ConfigItem:
+end
+
+implementation extraconfig_depends for ExtraConfig:
+    self.parent.requires = self.requires
+    self.parent.provides = self.provides
+end
+
+implement ExtraConfig using extraconfig_depends
+
+ConfigItem.extra [0:] -- ExtraConfig.parent [1]
+
+
 entity Config extends ConfigItem, std::PurgeableResource:
     """
         VYOS config block resource
@@ -47,18 +61,6 @@ end
 index Config(device, node)
 
 Config.credential [1] -- Credential
-
-entity ExtraConfig extends ConfigItem:
-end
-
-implementation extraconfig_depends for ExtraConfig:
-    self.parent.requires = self.requires
-    self.parent.provides = self.provides
-end
-
-implement ExtraConfig using extraconfig_depends
-
-Config.extra [0:] -- ExtraConfig.parent [1]
 
 implement Config using std::none
 
