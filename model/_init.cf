@@ -132,6 +132,8 @@ end
 BaseInterface.addresses [0:] -- Address
 BaseInterface.policy_route [0:1] -- PolicyRoute
 
+implement BaseInterface using iface_policy_route when policy_route is defined
+
 entity Interface extends BaseInterface:
     bool never_delete=false
     duplex duplex="auto"
