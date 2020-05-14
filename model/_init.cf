@@ -405,15 +405,19 @@ entity PolicyRoute extends ConfigNode:
     string name
     number rule
     number table
+    ip::cidr? source_address = null
+    ip::cidr? destination_address = null
+    string? protocol = null
+    string? description = null
 end
 
 implementation policyRoute for PolicyRoute:
-    self.node_name = "policy route {{name}} rule {{rule}} set table {{table}}"
+    self.node_name = "policy route {{name}} rule {{rule}}"
     self.config = vyos::Config(
         device=self.host.name,
         node=self.node_name,
         credential=self.host.credential,
-        config=self.node_name,
+        config=std::template("vyos/policy_route.j2"),
         requires=[self.host.requires, self.requires],
         provides=self.provides,
     )

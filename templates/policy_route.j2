@@ -1,0 +1,17 @@
+{{node_name}} set table '{{ table }}'
+
+{% if source_address -%}
+    {{ node_name }} source address '{{ source_address }}'
+{% endif %}
+
+{% if source_address -%}
+    {{ node_name }} destination address '{{ destination_address }}'
+{% endif %}
+
+{% if source_address -%}
+    {{ node_name }} protocol '{{ protocol }}'
+{% endif %}
+
+{% if description -%}
+    {{ node_name }} description '{{ description }}'
+{% endif %}
