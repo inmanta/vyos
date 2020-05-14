@@ -115,11 +115,11 @@ def test_policy_route(
     assert project.get_resource("vyos::Config").config.strip() == "\n".join(
         f"policy route T2 rule 1 {line}"
         for line in [
-            "set table '2'",
-            "source address '192.168.100.104/29'" if source_is_set else None,
-            "destination address '192.168.2.2/29'" if dest_is_set else None,
-            "protocol 'tcp'" if protocol_is_set else None,
-            "description 'my_description'" if description_is_set else None,
+            "set table 2",
+            "source address 192.168.100.104/29" if source_is_set else None,
+            "destination address 192.168.2.2/29" if dest_is_set else None,
+            "protocol tcp" if protocol_is_set else None,
+            "description my_description" if description_is_set else None,
         ]
         if line is not None
     )

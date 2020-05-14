@@ -413,13 +413,13 @@ end
 implement StaticRoute using staticRouteTable when table > 0
 
 entity PolicyRoute extends ConfigNode:
-    string name
+    std::alfanum name
     number rule
     number table
     ip::cidr? source_address = null
     ip::cidr? destination_address = null
-    string? protocol = null
-    string? description = null
+    std::alfanum? protocol = null
+    std::alfanum? description = null
 end
 
 implementation policyRoute for PolicyRoute:
