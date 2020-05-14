@@ -223,7 +223,9 @@ BaseInterface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
 
 implementation iface_policy_route for BaseInterface:
     self.config.extra = ExtraConfig(
-        config = "{{ self.node_name }} policy route '{{ self.policy_route.name }}'"
+        config = "{{ self.node_name }} policy route {{ self.policy_route.name }}",
+        requires = [self.requires, self.host.requires],
+        provides = self.provides
     )
 end
 
