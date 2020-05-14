@@ -57,8 +57,9 @@ def test_static_route(project, vy_host, clear):
     [
         (False, False, False, False),
         (True, False, False, False),
-        (True, True, False, False),
-        (True, True, True, False),
+        (False, True, False, False),
+        (False, False, True, False),
+        (False, False, False, True),
         (True, True, True, True),
     ],
 )
@@ -101,7 +102,7 @@ def test_policy_route(
                     "source_address = '192.168.100.104/29'" if source_is_set else None,
                     "destination_address = '192.168.2.2/29'" if dest_is_set else None,
                     "protocol = 'tcp'" if protocol_is_set else None,
-                    "description = 'my description'" if description_is_set else None,
+                    "description = 'my_description'" if description_is_set else None,
                     # make sure trailing comma is added when at least one line present
                     "",
                 ]
@@ -118,7 +119,7 @@ def test_policy_route(
             "source address '192.168.100.104/29'" if source_is_set else None,
             "destination address '192.168.2.2/29'" if dest_is_set else None,
             "protocol 'tcp'" if protocol_is_set else None,
-            "description 'my description'" if description_is_set else None,
+            "description 'my_description'" if description_is_set else None,
         ]
         if line is not None
     )
