@@ -131,8 +131,11 @@ end
 
 BaseInterface.addresses [0:] -- Address
 BaseInterface.policy_route [0:1] -- PolicyRoute
+"""
+    Set a policy route for this interface.
+"""
 
-implement BaseInterface using iface_policy_route when policy_route is defined
+implement BaseInterface using ifacePolicyRoute when policy_route is defined
 
 entity Interface extends BaseInterface:
     bool never_delete=false
@@ -221,11 +224,11 @@ implement OspfRedistribute using std::none
 BaseInterface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
 BaseInterface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
 
-implementation iface_policy_route for BaseInterface:
+implementation ifacePolicyRoute for BaseInterface:
     self.config.extra = ExtraConfig(
         config = "{{ self.node_name }} policy route {{ self.policy_route.name }}",
         requires = [self.requires, self.host.requires],
-        provides = self.provides
+        provides = self.provides,
     )
 end
 
@@ -415,29 +418,70 @@ end
 implement StaticRoute using staticRouteTable when table > 0
 
 entity PolicyRoute extends ConfigNode:
+    """
+        Route policy for Vyos `Polciy Based Routing <https://docs.vyos.io/en/latest/routing/pbr.html>`__.
+
+        :attr name: The name for this policy route
+        :attr rules: The rules for this policy route
+    """
     std::alfanum name
-    number rule
-    number table
-    ip::cidr? source_address = null
-    ip::cidr? destination_address = null
-    std::alfanum? protocol = null
-    std::alfanum? description = null
 end
 
-implementation policy_route for PolicyRoute:
-    self.node_name = "policy route {{name}} rule {{rule}}"
+index PolicyRoute(name)
+
+PolicyRoute.rules [1:] -- PolicyRouteRule.policy [1]
+
+entity PolicyRouteRule extends ConfigNode:
+    """
+        Rule in a route policy for Vyos `Polciy Based Routing <https://docs.vyos.io/en/latest/routing/pbr.html>`__.
+
+        :attr id: The rule number
+        :attr table: Routing table for traffic matching this rule
+        :attr description: Description for this rule
+        :attr match_source_address: The source address to match traffic on
+        :attr match_destination_address: The destination address to match traffic on
+        :attr match_source_port: The source port to match traffic on
+        :attr match_destination_port: The destination port to match traffic on
+        :attr match_protocol: The protocol to match traffic on
+    """
+    number id
+    number table
+    std::alfanum? description = null
+    ip::cidr? match_source_address = null
+    ip::cidr? match_destination_address = null
+    ip::port? match_source_port = null
+    ip::port? match_destination_port = null
+    std::alfanum? match_protocol = null
+end
+
+index PolicyRouteRule(policy, id)
+
+implementation policyRoute for PolicyRoute:
+    self.node_name = "policy route {{ name }}"
     self.config = vyos::Config(
-        device=self.host.name,
-        node=self.node_name,
-        credential=self.host.credential,
-        config=std::template("vyos/policy_route.j2"),
-        requires=[self.host.requires, self.requires],
-        provides=self.provides,
-        purged=self.purged,
+        device = self.host.name,
+        node = self.node_name,
+        credential = self.host.credential,
+        config = "",
+        requires = [self.requires, self.host.requires],
+        provides = self.provides,
+        purged = self.purged,
     )
 end
 
-implement PolicyRoute using policy_route
+implementation policyRouteRule for PolicyRouteRule:
+    self.host = self.policy.host
+    self.node_name = "{{ self.policy.node_name }} rule {{ id }}"
+    self.config = ExtraConfig(
+        config = std::template("vyos/policy_route_rule.j2"),
+        requires = [self.requires, self.host.requires],
+        provides = self.provides,
+    )
+    self.policy.config.extra += self.config
+end
+
+implement PolicyRoute using policyRoute
+implement PolicyRouteRule using policyRouteRule
 
 entity Shaper extends ConfigNode:
     string name

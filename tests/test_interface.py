@@ -159,7 +159,11 @@ def test_interface_vif_with_policy_route(project, vy_host, clear):
     vif.policy_route = vyos::PolicyRoute(
         host = r1,
         name = "T2",
-        rule = 1,
+    )
+
+    vyos::PolicyRouteRule(
+        policy = vif.policy_route,
+        id = 1,
         table = 2,
     )
         """,

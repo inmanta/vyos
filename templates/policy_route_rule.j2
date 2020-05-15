@@ -1,0 +1,25 @@
+{{node_name}} set table {{ table }}
+
+{% if description -%}
+    {{ node_name }} description {{ description }}
+{% endif %}
+
+{% if match_source_address -%}
+    {{ node_name }} source address {{ match_source_address }}
+{% endif %}
+
+{% if match_destination_address -%}
+    {{ node_name }} destination address {{ match_destination_address }}
+{% endif %}
+
+{% if match_source_port -%}
+    {{ node_name }} source port {{ match_source_port }}
+{% endif %}
+
+{% if match_destination_port -%}
+    {{ node_name }} destination port {{ match_destination_port }}
+{% endif %}
+
+{% if match_protocol -%}
+    {{ node_name }} protocol {{ match_protocol }}
+{% endif %}

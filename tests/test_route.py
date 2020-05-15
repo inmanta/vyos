@@ -53,22 +53,26 @@ def test_static_route(project, vy_host, clear):
 
 
 @pytest.mark.parametrize(
-    "source_is_set,dest_is_set,protocol_is_set,description_is_set",
+    "source_a_is_set,dest_a_is_set,source_p_is_set,dest_p_is_set,protocol_is_set,description_is_set",
     [
-        (False, False, False, False),
-        (True, False, False, False),
-        (False, True, False, False),
-        (False, False, True, False),
-        (False, False, False, True),
-        (True, True, True, True),
+        (False, False, False, False, False, False),
+        (True, False, False, False, False, False),
+        (False, True, False, False, False, False),
+        (False, False, True, False, False, False),
+        (False, False, False, True, False, False),
+        (False, False, False, False, True, False),
+        (False, False, False, False, False, True),
+        (True, True, True, True, True, True),
     ],
 )
 def test_policy_route(
     project,
     vy_host,
     clear,
-    source_is_set: bool,
-    dest_is_set: bool,
+    source_a_is_set: bool,
+    dest_a_is_set: bool,
+    source_p_is_set: bool,
+    dest_p_is_set: bool,
     protocol_is_set: bool,
     description_is_set: bool,
 ) -> None:
@@ -84,21 +88,27 @@ def test_policy_route(
         ip = "{vy_host}",
     )
 
-    vyos::PolicyRoute(
+    policy = vyos::PolicyRoute(
         host = r1,
         name = "T2",
-        rule = 1,
+        purged = {convert_bool(purge)}
+    )
+
+    vyos::PolicyRouteRule(
+        policy = policy,
+        id = 1,
         table = 2,
         %s
-        purged = {convert_bool(purge)}
     )
             """
             % ",".join(
                 line
                 for line in [
-                    "source_address = '192.168.100.104/29'" if source_is_set else None,
-                    "destination_address = '192.168.2.2/29'" if dest_is_set else None,
-                    "protocol = 'tcp'" if protocol_is_set else None,
+                    "match_source_address = '192.168.100.104/29'" if source_a_is_set else None,
+                    "match_destination_address = '192.168.2.2/29'" if dest_a_is_set else None,
+                    "match_source_port = 123" if source_p_is_set else None,
+                    "match_destination_port = 456" if dest_p_is_set else None,
+                    "match_protocol = 'tcp'" if protocol_is_set else None,
                     "description = 'MyDescription'" if description_is_set else None,
                     # make sure trailing comma is added when at least one line present
                     "",
@@ -113,10 +123,12 @@ def test_policy_route(
         f"policy route T2 rule 1 {line}"
         for line in [
             "set table 2",
-            "source address 192.168.100.104/29" if source_is_set else None,
-            "destination address 192.168.2.2/29" if dest_is_set else None,
-            "protocol tcp" if protocol_is_set else None,
             "description MyDescription" if description_is_set else None,
+            "source address 192.168.100.104/29" if source_a_is_set else None,
+            "destination address 192.168.2.2/29" if dest_a_is_set else None,
+            "source port 123" if source_p_is_set else None,
+            "destination port 456" if dest_p_is_set else None,
+            "protocol tcp" if protocol_is_set else None,
         ]
         if line is not None
     )
