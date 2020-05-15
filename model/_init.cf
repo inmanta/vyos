@@ -424,6 +424,7 @@ entity PolicyRoute extends ConfigNode:
         :attr name: The name for this policy route
         :attr rules: The rules for this policy route
     """
+    # alfanum because of issue inmanta/vyos#28
     std::alfanum name
 end
 
@@ -446,11 +447,13 @@ entity PolicyRouteRule extends ConfigNode:
     """
     number id
     number table
+    # alfanum because of issue inmanta/vyos#28
     std::alfanum? description = null
     ip::cidr? match_source_address = null
     ip::cidr? match_destination_address = null
     ip::port? match_source_port = null
     ip::port? match_destination_port = null
+    # alfanum because of issue inmanta/vyos#28
     std::alfanum? match_protocol = null
 end
 
