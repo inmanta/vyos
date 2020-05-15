@@ -1,5 +1,3 @@
-from typing import Iterable, Optional
-
 import pytest
 
 
@@ -104,8 +102,12 @@ def test_policy_route(
             % ",".join(
                 line
                 for line in [
-                    "match_source_address = '192.168.100.104/29'" if source_a_is_set else None,
-                    "match_destination_address = '192.168.2.2/29'" if dest_a_is_set else None,
+                    "match_source_address = '192.168.100.104/29'"
+                    if source_a_is_set
+                    else None,
+                    "match_destination_address = '192.168.2.2/29'"
+                    if dest_a_is_set
+                    else None,
                     "match_source_port = 123" if source_p_is_set else None,
                     "match_destination_port = 456" if dest_p_is_set else None,
                     "match_protocol = 'tcp'" if protocol_is_set else None,
