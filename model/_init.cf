@@ -439,8 +439,8 @@ entity PolicyRouteRule extends ConfigNode:
         :attr table: Routing table for traffic matching this rule
         :attr description: Description for this rule
         :attr match_source_address: The source address to match traffic on
-        :attr match_destination_address: The destination address to match traffic on
-        :attr match_source_port: The source port to match traffic on
+        :attr match_destination_address: The destination address to match traffic on. Can only be specified if match_protocol is set
+        :attr match_source_port: The source port to match traffic on. Can only be specified if match_protocol in ["tcp", "udp"]
         :attr match_destination_port: The destination port to match traffic on
         :attr match_protocol: The protocol to match traffic on
     """
@@ -471,6 +471,11 @@ end
 
 implementation policyRouteRule for PolicyRouteRule:
     self.host = self.policy.host
+    if not self.match_protocol in ["tcp", "udp"]:
+        # assert these are only set for allowed protocols
+        self.match_source_port = null
+        self.match_destination_port = null
+    end
     self.node_name = "{{ self.policy.node_name }} rule {{ id }}"
     self.config = ExtraConfig(
         config = std::template("vyos/policy_route_rule.j2"),
