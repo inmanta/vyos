@@ -215,6 +215,10 @@ class VyosHandler(VyosBaseHandler):
 
     def _dict_to_path(self, node, dct):
         paths = []
+
+        if dct is None:
+            return paths
+
         if isinstance(dct, str):
             paths.append((node, dct))
             return paths
