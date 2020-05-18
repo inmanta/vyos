@@ -7,7 +7,8 @@
 """
 import itertools
 import re
-from typing import Tuple
+from functools import reduce
+from typing import Any, Tuple
 
 from inmanta.agent.handler import (
     CRUDHandler,
@@ -56,13 +57,16 @@ class Config(PurgeableResource):
 
     @staticmethod
     def get_config(_, obj):
-        config = str(obj.config)
-        for ext in obj.extra:
-            config += "\n" + ext.config
+        def get_config_recur(instance: Any) -> str:
+            return reduce(
+                lambda acc, extra: acc + "\n" + get_config_recur(extra),
+                instance.extra,
+                str(instance.config),
+            )
 
         # strip out all empty lines
         lines = []
-        for line in config.split("\n"):
+        for line in get_config_recur(obj).split("\n"):
             line = line.strip()
             if line:
                 lines.append(line)

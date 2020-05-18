@@ -24,6 +24,20 @@ entity ConfigItem:
     string config
 end
 
+
+entity ExtraConfig extends ConfigItem:
+end
+
+implementation extraconfig_depends for ExtraConfig:
+    self.parent.requires = self.requires
+    self.parent.provides = self.provides
+end
+
+implement ExtraConfig using extraconfig_depends
+
+ConfigItem.extra [0:] -- ExtraConfig.parent [1]
+
+
 entity Config extends ConfigItem, std::PurgeableResource:
     """
         VYOS config block resource
@@ -47,18 +61,6 @@ end
 index Config(device, node)
 
 Config.credential [1] -- Credential
-
-entity ExtraConfig extends ConfigItem:
-end
-
-implementation extraconfig_depends for ExtraConfig:
-    self.parent.requires = self.requires
-    self.parent.provides = self.provides
-end
-
-implement ExtraConfig using extraconfig_depends
-
-Config.extra [0:] -- ExtraConfig.parent [1]
 
 implement Config using std::none
 
@@ -128,6 +130,12 @@ entity BaseInterface extends ConfigNode:
 end
 
 BaseInterface.addresses [0:] -- Address
+BaseInterface.policy_route [0:1] -- PolicyRoute
+"""
+    Set a policy route for this interface.
+"""
+
+implement BaseInterface using ifacePolicyRoute when policy_route is defined
 
 entity Interface extends BaseInterface:
     bool never_delete=false
@@ -139,7 +147,7 @@ Interface.inbound_ruleset [0:1] -- vyos::firewall::RuleSet
 Interface.local_ruleset [0:1] -- vyos::firewall::RuleSet
 Interface.outbound_ruleset [0:1] -- vyos::firewall::RuleSet
 
-implement Interface using iface
+implement Interface using parents, iface
 
 index Interface(host, name)
 
@@ -216,6 +224,14 @@ implement OspfRedistribute using std::none
 BaseInterface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
 BaseInterface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
 
+implementation ifacePolicyRoute for BaseInterface:
+    self.config.extra = ExtraConfig(
+        config = "{{ self.node_name }} policy route {{ self.policy_route.name }}",
+        requires = [self.requires, self.host.requires],
+        provides = self.provides,
+    )
+end
+
 implementation iface for Interface:
     self.node_name = "interfaces ethernet {{ name }}"
     self.config = vyos::Config(
@@ -284,7 +300,7 @@ end
 
 implement Loopback using loopback
 implement Ospf using ospf
-implement Tunnel using tunnel
+implement Tunnel using parents, tunnel
 
 Vif.parent [1] -- Interface
 
@@ -294,7 +310,7 @@ entity Vif extends BaseInterface:
     string name=""
 end
 
-implement Vif using vif
+implement Vif using parents, vif
 
 index Vif(parent, vlan)
 
@@ -324,7 +340,7 @@ end
 
 BaseInterface.bridge_group [0:1] -- Bridge.interfaces [0:]
 
-implement Bridge using bridge
+implement Bridge using parents, bridge
 
 implementation bridge for Bridge:
     self.node_name = "interfaces bridge {{name}}"
@@ -402,24 +418,78 @@ end
 implement StaticRoute using staticRouteTable when table > 0
 
 entity PolicyRoute extends ConfigNode:
-    string name
-    number rule
-    number table
+    """
+        Route policy for Vyos `Polciy Based Routing <https://docs.vyos.io/en/latest/routing/pbr.html>`__.
+
+        :attr name: The name for this policy route
+        :attr rules: The rules for this policy route
+    """
+    # alfanum because of issue inmanta/vyos#28
+    std::alfanum name
 end
 
+index PolicyRoute(name)
+
+PolicyRoute.rules [1:] -- PolicyRouteRule.policy [1]
+
+entity PolicyRouteRule extends ConfigNode:
+    """
+        Rule in a route policy for Vyos `Polciy Based Routing <https://docs.vyos.io/en/latest/routing/pbr.html>`__.
+
+        :attr id: The rule number
+        :attr table: Routing table for traffic matching this rule
+        :attr description: Description for this rule
+        :attr match_source_address: The source address to match traffic on
+        :attr match_destination_address: The destination address to match traffic on. Can only be specified if match_protocol is set
+        :attr match_source_port: The source port to match traffic on. Can only be specified if match_protocol in ["tcp", "udp"]
+        :attr match_destination_port: The destination port to match traffic on
+        :attr match_protocol: The protocol to match traffic on
+    """
+    number id
+    number table
+    # alfanum because of issue inmanta/vyos#28
+    std::alfanum? description = null
+    ip::cidr? match_source_address = null
+    ip::cidr? match_destination_address = null
+    ip::port? match_source_port = null
+    ip::port? match_destination_port = null
+    # alfanum because of issue inmanta/vyos#28
+    std::alfanum? match_protocol = null
+end
+
+index PolicyRouteRule(policy, id)
+
 implementation policyRoute for PolicyRoute:
-    self.node_name = "policy route {{name}} rule {{rule}} set table {{table}}"
+    self.node_name = "policy route {{ name }}"
     self.config = vyos::Config(
-        device=self.host.name,
-        node=self.node_name,
-        credential=self.host.credential,
-        config=self.node_name,
-        requires=[self.host.requires, self.requires],
-        provides=self.provides,
+        device = self.host.name,
+        node = self.node_name,
+        credential = self.host.credential,
+        config = "",
+        requires = [self.requires, self.host.requires],
+        provides = self.provides,
+        purged = self.purged,
     )
 end
 
+implementation policyRouteRule for PolicyRouteRule:
+    self.host = self.policy.host
+    if not self.match_protocol in ["tcp", "udp"]:
+        # assert these are only set for allowed protocols
+        self.match_source_port = null
+        self.match_destination_port = null
+    end
+    self.node_name = "{{ self.policy.node_name }} rule {{ id }}"
+    self.config = ExtraConfig(
+        config = std::template("vyos/policy_route_rule.j2"),
+        requires = [self.requires, self.host.requires],
+        provides = self.provides,
+    )
+    self.policy.config.extra += self.config
+end
+
 implement PolicyRoute using policyRoute
+implement PolicyRouteRule using policyRouteRule
 
 entity Shaper extends ConfigNode:
     string name
