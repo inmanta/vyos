@@ -384,7 +384,7 @@ entity StaticRoute extends ConfigNode:
     number table=0
 end
 
-index StaticRoute(host, destination)
+index StaticRoute(host, destination, table)
 
 implementation staticRouteDefault for StaticRoute:
     self.node_name = "protocols static route {{destination}}"
