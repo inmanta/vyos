@@ -185,7 +185,7 @@ def test_41_policy_route_purge(project, vy_host, clear) -> None:
         )
 
     make_config()
-    # no assertions, just verify this doesn't crash
+    # no assertions, just verify this doesn't fail
     make_config(purge_policy=True)
     # cleanup
     make_config(purge_policy=True, purge_iface=True)
