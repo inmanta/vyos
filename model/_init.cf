@@ -486,13 +486,15 @@ implementation policyRouteRule for PolicyRouteRule:
     end
     self.node_name = "{{ self.policy.node_name }} rule {{ id }}"
     self.config = ExtraConfig(
-        config = std::template("vyos/policy_route_rule.j2"),
         requires = [self.requires, self.host.requires],
         provides = self.provides,
     )
-    if not self.purged:
-        self.policy.config.extra += self.config
+    if self.purged:
+        self.config.config = ""
+    else:
+        self.config.config = std::template("vyos/policy_route_rule.j2")
     end
+    self.policy.config.extra += self.config
 end
 
 implement PolicyRoute using policyRoute
