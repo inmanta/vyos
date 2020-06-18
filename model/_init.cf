@@ -225,11 +225,16 @@ BaseInterface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
 BaseInterface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
 
 implementation ifacePolicyRoute for BaseInterface:
-    self.config.extra = ExtraConfig(
-        config = "{{ self.node_name }} policy route {{ self.policy_route.name }}",
-        requires = [self.requires, self.host.requires],
-        provides = self.provides,
-    )
+    if self.policy_route.purged:
+        self.policy_route.requires += [self, self.requires]
+    else:
+        self.config.extra = ExtraConfig(
+            config = "{{ self.node_name }} policy route {{ self.policy_route.name }}",
+            requires = [self.requires, self.host.requires],
+            provides = self.provides,
+        )
+        self.requires += [self.policy_route, self.policy_route.requires]
+    end
 end
 
 implementation iface for Interface:
@@ -430,7 +435,7 @@ end
 
 index PolicyRoute(name)
 
-PolicyRoute.rules [1:] -- PolicyRouteRule.policy [1]
+PolicyRoute.rules [0:] -- PolicyRouteRule.policy [1]
 
 entity PolicyRouteRule extends ConfigNode:
     """
@@ -485,7 +490,9 @@ implementation policyRouteRule for PolicyRouteRule:
         requires = [self.requires, self.host.requires],
         provides = self.provides,
     )
-    self.policy.config.extra += self.config
+    if not self.purged:
+        self.policy.config.extra += self.config
+    end
 end
 
 implement PolicyRoute using policyRoute
