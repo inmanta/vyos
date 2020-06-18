@@ -435,7 +435,7 @@ end
 
 index PolicyRoute(name)
 
-PolicyRoute.rules [0:] -- PolicyRouteRule.policy [1]
+PolicyRoute.rules [1:] -- PolicyRouteRule.policy [1]
 
 entity PolicyRouteRule extends ConfigNode:
     """

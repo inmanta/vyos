@@ -198,8 +198,9 @@ def test_41_policy_route_purge(project, vy_host, clear) -> None:
     project.deploy_resource("vyos::Config", node="interfaces ethernet eth1")
 
     # no assertions, just verify this doesn't fail
-    make_config(purge_rule=True)
-    project.deploy_resource("vyos::Config", node="policy route T2")
+    # commented out due to inmanta/vyos#43
+    # make_config(purge_rule=True)
+    # project.deploy_resource("vyos::Config", node="policy route T2")
 
     # no assertions, just verify this doesn't fail
     make_config(purge_rule=True, purge_policy=True)
