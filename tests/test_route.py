@@ -121,7 +121,7 @@ def test_policy_route(
 
     make_config()
 
-    assert project.get_resource("vyos::Config").config.strip() == "\n".join(
+    assert project.get_resource("vyos::Config").config.strip() == "policy route T2\n" + "\n".join(
         f"policy route T2 rule 1 {line}"
         for line in [
             "set table 2",
