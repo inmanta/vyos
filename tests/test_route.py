@@ -185,7 +185,12 @@ def test_41_policy_route_purge(project, vy_host, clear) -> None:
         )
 
     make_config()
+    project.deploy_latest_version(full_deploy=True)
+
     # no assertions, just verify this doesn't fail
     make_config(purge_policy=True)
+    project.deploy_latest_version(full_deploy=True)
+
     # cleanup
     make_config(purge_policy=True, purge_iface=True)
+    project.deploy_latest_version(full_deploy=True)
