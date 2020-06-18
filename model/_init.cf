@@ -470,7 +470,7 @@ implementation policyRoute for PolicyRoute:
         device = self.host.name,
         node = self.node_name,
         credential = self.host.credential,
-        config = "",
+        config = self.node_name,
         requires = [self.requires, self.host.requires],
         provides = self.provides,
         purged = self.purged,
