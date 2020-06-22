@@ -121,7 +121,7 @@ def test_policy_route(
 
     make_config()
 
-    assert project.get_resource("vyos::Config").config.strip() == "\n".join(
+    assert project.get_resource("vyos::Config").config.strip() == "policy route T2\n" + "\n".join(
         f"policy route T2 rule 1 {line}"
         for line in [
             "set table 2",
@@ -154,3 +154,60 @@ def test_policy_route(
 
     compare = project.dryrun_resource("vyos::Config")
     assert len(compare) == 0
+
+
+def test_41_policy_route_purge(project, vy_host, clear) -> None:
+    def make_config(purge_iface: bool = False, purge_policy: bool = False, purge_rule: bool = False) -> None:
+        project.compile(
+            f"""
+    import vyos
+
+    r1 = vyos::Host(
+        name = "lab1",
+        user = "vyos",
+        password = "vyos",
+        ip = "{vy_host}",
+    )
+
+    iface = vyos::Interface(
+        host = r1,
+        name = "eth1",
+        address = "192.168.1.1/24",
+        purged = {convert_bool(purge_iface)}
+    )
+
+    policy = vyos::PolicyRoute(
+        host = r1,
+        name = "T2",
+        purged = {convert_bool(purge_policy)}
+    )
+
+    iface.policy_route = policy
+
+    vyos::PolicyRouteRule(
+        policy = policy,
+        id = 1,
+        table = 1,
+        purged = {convert_bool(purge_rule)},
+    )
+            """,
+        )
+
+    make_config()
+    project.deploy_resource("vyos::Config", node="policy route T2")
+    project.deploy_resource("vyos::Config", node="interfaces ethernet eth1")
+
+    # no assertions, just verify this doesn't fail
+    # commented out due to inmanta/vyos#43
+    # make_config(purge_rule=True)
+    # project.deploy_resource("vyos::Config", node="policy route T2")
+
+    # no assertions, just verify this doesn't fail
+    make_config(purge_rule=True, purge_policy=True)
+    project.deploy_resource("vyos::Config", node="interfaces ethernet eth1")
+    project.deploy_resource("vyos::Config", node="policy route T2")
+
+    # cleanup
+    make_config(purge_rule=True, purge_policy=True, purge_iface=True)
+    project.deploy_resource("vyos::Config", node="interfaces ethernet eth1")
+    project.deploy_resource("vyos::Config", node="policy route T2")

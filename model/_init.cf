@@ -225,11 +225,16 @@ BaseInterface.traffic_policy_out [0:1] -- Shaper.interfaces_in [0:]
 BaseInterface.traffic_policy_in [0:1] -- Shaper.interfaces_out [0:]
 
 implementation ifacePolicyRoute for BaseInterface:
-    self.config.extra = ExtraConfig(
-        config = "{{ self.node_name }} policy route {{ self.policy_route.name }}",
-        requires = [self.requires, self.host.requires],
-        provides = self.provides,
-    )
+    if self.policy_route.purged:
+        self.policy_route.requires += [self, self.requires]
+    else:
+        self.config.extra = ExtraConfig(
+            config = "{{ self.node_name }} policy route {{ self.policy_route.name }}",
+            requires = [self.requires, self.host.requires],
+            provides = self.provides,
+        )
+        self.requires += [self.policy_route, self.policy_route.requires]
+    end
 end
 
 implementation iface for Interface:
@@ -465,7 +470,7 @@ implementation policyRoute for PolicyRoute:
         device = self.host.name,
         node = self.node_name,
         credential = self.host.credential,
-        config = "",
+        config = self.node_name,
         requires = [self.requires, self.host.requires],
         provides = self.provides,
         purged = self.purged,
@@ -481,10 +486,14 @@ implementation policyRouteRule for PolicyRouteRule:
     end
     self.node_name = "{{ self.policy.node_name }} rule {{ id }}"
     self.config = ExtraConfig(
-        config = std::template("vyos/policy_route_rule.j2"),
         requires = [self.requires, self.host.requires],
         provides = self.provides,
     )
+    if self.purged:
+        self.config.config = ""
+    else:
+        self.config.config = std::template("vyos/policy_route_rule.j2")
+    end
     self.policy.config.extra += self.config
 end
 
