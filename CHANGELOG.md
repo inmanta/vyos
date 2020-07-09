@@ -1,3 +1,6 @@
+# V1.1.3
+- Added missing dev dependency (#20)
+
 # V1.1.2
 - Fixed purge dependencies for policy based routing (#41)
 
