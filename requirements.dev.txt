@@ -3,3 +3,4 @@ flake8==3.8.3
 flake8-black==0.2.0
 flake8-isort==3.0.0
 flake8-copyright==0.2.2
+netaddr==0.8.0
