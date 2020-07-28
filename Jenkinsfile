@@ -9,11 +9,12 @@ pipeline {
     environment {
         INMANTA_MODULE_REPO='https://github.com/inmanta/'
         INMANTA_TEST_ENV="${env.WORKSPACE}/env"
+        PIP_INDEX_URL='https://artifacts.internal.inmanta.com/inmanta/dev'
+        PIP_PRE="true"
     }
 
     triggers {
-        pollSCM('* * * * *')
-        cron("H H(2-5) * * *")
+        cron(BRANCH_NAME == "master" ? "H H(2-5) * * *": "")
     }
 
     stages {
