@@ -10,6 +10,9 @@ import re
 from functools import reduce
 from typing import Any, Tuple
 
+import pexpect
+import vyattaconfparser
+import vymgmt
 from inmanta.agent.handler import (
     CRUDHandler,
     HandlerContext,
@@ -19,10 +22,6 @@ from inmanta.agent.handler import (
     provider,
 )
 from inmanta.resources import PurgeableResource, resource
-
-import pexpect
-import vyattaconfparser
-import vymgmt
 from pexpect import pxssh
 from pexpect.exceptions import TIMEOUT
 

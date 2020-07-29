@@ -1,6 +1,5 @@
-from inmanta.agent import handler
-
 import netaddr
+from inmanta.agent import handler
 
 
 def convert_bool(val):

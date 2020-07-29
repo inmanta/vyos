@@ -121,7 +121,9 @@ def test_policy_route(
 
     make_config()
 
-    assert project.get_resource("vyos::Config").config.strip() == "policy route T2\n" + "\n".join(
+    assert project.get_resource(
+        "vyos::Config"
+    ).config.strip() == "policy route T2\n" + "\n".join(
         f"policy route T2 rule 1 {line}"
         for line in [
             "set table 2",
@@ -157,7 +159,9 @@ def test_policy_route(
 
 
 def test_41_policy_route_purge(project, vy_host, clear) -> None:
-    def make_config(purge_iface: bool = False, purge_policy: bool = False, purge_rule: bool = False) -> None:
+    def make_config(
+        purge_iface: bool = False, purge_policy: bool = False, purge_rule: bool = False
+    ) -> None:
         project.compile(
             f"""
     import vyos

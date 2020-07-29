@@ -1,8 +1,7 @@
 import os
 
-from pytest import fixture
-
 import vymgmt
+from pytest import fixture
 
 
 @fixture
