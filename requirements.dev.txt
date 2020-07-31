@@ -5,7 +5,7 @@ flake8-isort==3.0.1
 flake8-copyright==0.2.2
 netaddr==0.8.0
 
-# Transative dependancies
+# Transitive dependencies
 apipkg==1.5
 appdirs==1.4.4
 arrow==0.15.8
