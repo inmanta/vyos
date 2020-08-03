@@ -3,7 +3,7 @@ import pytest
 
 def test_speed(project):
     project.compile(
-        f"""
+        """
 import vyos
 
 entity Tester:
@@ -21,7 +21,7 @@ Tester(value="2500")
     with pytest.raises(Exception):
 
         project.compile(
-            f"""
+            """
     import vyos
 
     entity Tester:
