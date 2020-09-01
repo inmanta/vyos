@@ -138,7 +138,7 @@ class VyosBaseHandler(CRUDHandler):
             vyos.run_op_mode_command("export TERM=ansi")
         except pexpect.pxssh.ExceptionPxssh:
             ctx.exception("Failed to connect to host")
-            raise SkipResource("Host not available (yet)")
+            raise
         self.connection = vyos
         return vyos
 
