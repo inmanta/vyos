@@ -1,3 +1,6 @@
+# V1.2.0
+- Ensure connection failure always results in an error
+
 # V1.1.3
 - Added missing dev dependency (#20)
 
