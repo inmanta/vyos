@@ -1,3 +1,6 @@
+# V1.2.1
+- Improved error reporting
+
 # V1.2.0
 - Ensure connection failure always results in an error
 
