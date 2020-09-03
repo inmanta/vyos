@@ -137,7 +137,9 @@ class VyosBaseHandler(CRUDHandler):
             # terminal is not fully functional
             vyos.run_op_mode_command("export TERM=ansi")
         except pexpect.pxssh.ExceptionPxssh:
-            ctx.exception("Failed to connect to host")
+            ctx.exception(
+                "Failed to connect to host %(address)s", address=cred["address"]
+            )
             raise
         self.connection = vyos
         return vyos
