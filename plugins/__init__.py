@@ -274,7 +274,7 @@ class VyosHandler(VyosBaseHandler):
 
     def _diff(self, current, desired):
         """
-            Generate a similar tree
+        Generate a similar tree
         """
         dcfg = {}
 

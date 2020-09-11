@@ -169,6 +169,10 @@ def test_interface_vif_with_policy_route(project, vy_host, clear):
         """,
     )
 
-    assert "interfaces ethernet eth1 vif 10 policy route T2" in project.get_resource(
-        "vyos::Config", node="interfaces ethernet eth1",
-    ).config.split("\n")
+    assert (
+        "interfaces ethernet eth1 vif 10 policy route T2"
+        in project.get_resource(
+            "vyos::Config",
+            node="interfaces ethernet eth1",
+        ).config.split("\n")
+    )
