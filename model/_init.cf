@@ -56,6 +56,7 @@ entity Config extends ConfigItem, std::PurgeableResource:
     string[] keys_only=[]
     string[] ignore_keys=[]
     bool facts=false
+    bool skip_on_connect_error
 end
 
 index Config(device, node)
@@ -76,10 +77,14 @@ implement Credential using std::none
 entity BaseHost extends ip::Host:
     """
         A vyos (or derivative) based host.
+
+        :attr skip_on_connect_error: When true, vyos resources deployed on this host will be skipped when the handler fails to
+            connect to the host. Otherwise the resource will be marked as failed.
     """
     string user="inmanta"
     string password="inmanta"
     number port=22
+    bool skip_on_connect_error=false
 end
 
 entity Host extends BaseHost:
@@ -172,6 +177,7 @@ implementation masq for Masquerade:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/masq.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
@@ -244,6 +250,7 @@ implementation iface for Interface:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/interface.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
@@ -267,6 +274,7 @@ implementation loopback for Loopback:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/lointerface.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
     )
@@ -279,6 +287,7 @@ implementation ospf for Ospf:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/ospf.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
@@ -296,6 +305,7 @@ implementation tunnel for Tunnel:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/tunnel.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
@@ -354,6 +364,7 @@ implementation bridge for Bridge:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/bridge.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.requires, self.host.requires]
     )
     self.config.provides = self.interfaces
@@ -376,6 +387,7 @@ implementation dhcpServer for DhcpServer:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/dhcp.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
     )
@@ -400,6 +412,7 @@ implementation staticRouteDefault for StaticRoute:
         node=self.node_name,
         credential=self.host.credential,
         config=node_cfg,
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
@@ -415,6 +428,7 @@ implementation staticRouteTable for StaticRoute:
         node=self.node_name,
         credential=self.host.credential,
         config=self.node_name,
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
     )
@@ -471,6 +485,7 @@ implementation policyRoute for PolicyRoute:
         node = self.node_name,
         credential = self.host.credential,
         config = self.node_name,
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires = [self.requires, self.host.requires],
         provides = self.provides,
         purged = self.purged,
@@ -515,6 +530,7 @@ implementation shaper for Shaper:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/shaper.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
     )
@@ -543,6 +559,7 @@ implementation hostname for Hostname:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/hostname.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides
     )
@@ -564,6 +581,7 @@ implementation routeMap for RouteMap:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/routemap.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
