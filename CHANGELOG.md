@@ -1,3 +1,6 @@
+# V1.3.0
+- Added the option to skip resources when host connection fails (#90)
+
 # V1.2.1
 - Improved error reporting
 

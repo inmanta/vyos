@@ -38,6 +38,7 @@ class Config(PurgeableResource):
         "ignore_keys",
         "device",
         "facts",
+        "skip_on_connect_error",
     )
 
     @staticmethod
@@ -75,7 +76,7 @@ class Config(PurgeableResource):
 
 @resource("vyos::vpn::KeyGen", id_attribute="id", agent="device")
 class KeyGen(PurgeableResource):
-    fields = ("credential",)
+    fields = ("credential", "skip_on_connect_error")
 
     @staticmethod
     def get_credential(_, obj):
@@ -87,10 +88,14 @@ class KeyGen(PurgeableResource):
             "address": obj.address,
         }
 
+    @staticmethod
+    def get_skip_on_connect_error(_, obj):
+        return obj.host.skip_on_connect_error
+
 
 @resource("vyos::IpFact", id_attribute="id", agent="device")
 class IpFact(PurgeableResource):
-    fields = ("credential", "interface")
+    fields = ("credential", "interface", "skip_on_connect_error")
 
     @staticmethod
     def get_interface(_, obj):
@@ -105,6 +110,10 @@ class IpFact(PurgeableResource):
             "port": obj.port,
             "address": obj.address,
         }
+
+    @staticmethod
+    def get_skip_on_connect_error(_, obj):
+        return obj.host.skip_on_connect_error
 
 
 class Router(vymgmt.Router):
@@ -140,6 +149,10 @@ class VyosBaseHandler(CRUDHandler):
             ctx.exception(
                 "Failed to connect to host %(address)s", address=cred["address"]
             )
+            if resource.skip_on_connect_error:
+                raise SkipResource(
+                    "Host not available (yet). Skipping because skip_on_connect_error == true"
+                )
             raise
         self.connection = vyos
         return vyos

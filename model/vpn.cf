@@ -24,6 +24,7 @@ implementation ipsecOptions for ConfigNode:
         node=self.node_name,
         credential=self.host.credential,
         config=std::template("vyos/ipsecoptions.j2"),
+        skip_on_connect_error=host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
@@ -58,10 +59,11 @@ ESPGroup.proposals [1:] -- ESPProposal
 implementation espGroup for ESPGroup:
     self.node_name = "vpn ipsec esp-group {{ name }}"
     self.config = vyos::Config(
-        device=self.host.name, 
-        node=self.node_name, 
+        device=self.host.name,
+        node=self.node_name,
         credential=self.host.credential,
-        config=std::template("vyos/espgroup.j2"), 
+        config=std::template("vyos/espgroup.j2"),
+        skip_on_connect_error=host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
@@ -84,7 +86,7 @@ entity IKEProposal:
     number id
     dh_group_t? dh_group=null
     encryption_t encryption
-    hash_t hash="sha1"    
+    hash_t hash="sha1"
 end
 
 implement IKEProposal using std::none
@@ -94,10 +96,11 @@ IKEGroup.proposals [1:] -- IKEProposal
 implementation ikeGroup for IKEGroup:
     self.node_name = "vpn ipsec ike-group {{ name }}"
     self.config = vyos::Config(
-        device=self.host.name, 
-        node=self.node_name, 
+        device=self.host.name,
+        node=self.node_name,
         credential=self.host.credential,
-        config=std::template("vyos/ikegroup.j2"), 
+        config=std::template("vyos/ikegroup.j2"),
+        skip_on_connect_error=host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
@@ -144,10 +147,11 @@ SiteToSite.tunnels [0:] -- Tunnel
 implementation siteToSite for SiteToSite:
     self.node_name = "vpn ipsec site-to-site peer {{ peer }}"
     self.config = vyos::Config(
-        device=self.host.name, 
-        node=self.node_name, 
+        device=self.host.name,
+        node=self.node_name,
         credential=self.host.credential,
-        config=std::template("vyos/site2site.j2"), 
+        config=std::template("vyos/site2site.j2"),
+        skip_on_connect_error=host.skip_on_connect_error,
         requires=[self.host.requires, self.requires, self.ike_group, self.default_esp_group],
         provides=self.provides,
         purged=self.purged,
@@ -159,17 +163,18 @@ implement SiteToSite using siteToSite
 entity RSAKey extends ConfigNode:
     string name
     string rsa_key
-end 
+end
 
 index RSAKey(host, name)
 
 implementation rsaKey for RSAKey:
     self.node_name = "vpn rsa-keys rsa-key-name {{ name }}"
     self.config = vyos::Config(
-        device=self.host.name, 
-        node=self.node_name, 
+        device=self.host.name,
+        node=self.node_name,
         credential=self.host.credential,
-        config=std::template("vyos/rsakey.j2"), 
+        config=std::template("vyos/rsakey.j2"),
+        skip_on_connect_error=host.skip_on_connect_error,
         requires=[self.host.requires, self.requires],
         provides=self.provides,
         purged=self.purged,
