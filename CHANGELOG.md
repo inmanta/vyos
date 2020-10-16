@@ -1,3 +1,6 @@
+# V1.3.1
+- Fix test cases
+
 # V1.3.0
 - Added the option to skip resources when host connection fails (#90)
 
