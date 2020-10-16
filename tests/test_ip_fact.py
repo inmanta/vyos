@@ -57,8 +57,8 @@ def test_ip_fact_multi(project, vy_host, clear):
         name="eth1",
         purged={convert_bool(purge)},
         addresses = [
-            vyos::Address(ip="10.0.0.1/24"),
-            vyos::Address(ip="10.0.0.2/24")
+            vyos::Address(ip="169.254.0.1/24"),
+            vyos::Address(ip="169.254.0.2/24")
         ]
     )
 
