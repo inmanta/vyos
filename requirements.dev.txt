@@ -25,7 +25,7 @@ execnet==1.7.1
 idna==2.10
 importlib-metadata==2.0.0
 iniconfig==1.1.1
-inmanta==2020.4.3
+inmanta==2020.5
 isort==5.6.4
 Jinja2==2.11.2
 jinja2-time==0.2.0
