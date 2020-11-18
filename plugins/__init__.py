@@ -211,7 +211,10 @@ class VyosHandler(VyosBaseHandler):
             return cache[resource.device]
         out = vyos.configure()
         out = vyos.run_conf_mode_command("save /tmp/inmanta_tmp")
-        if "Saving configuration to '/tmp/inmanta_tmp'" not in out:
+        if not (
+            "Saving configuration to '/tmp/inmanta_tmp'" in out
+            or "saving configuration to non-default location '/tmp/inmanta_tmp'" in out
+        ):
             raise SkipResource(f"Could not save config: {out}")
         ctx.debug("Saved config: %(out)s", out=out)
         out = vyos.exit()
