@@ -2,4 +2,4 @@ vyattaconfparser==0.5.5
 vymgmt==0.1
 
 pexpect==4.8.0
-ptyprocess==0.6.0
+ptyprocess==0.7.0
