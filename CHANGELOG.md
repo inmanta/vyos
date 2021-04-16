@@ -1,3 +1,6 @@
+# v1.3.4
+- Update inmanta-dev-dependencies package
+
 # v1.3.3
 - Allow slightly different configuration save confirmation message for ubiquiti devices (#29)
 
