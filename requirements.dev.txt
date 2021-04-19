@@ -1,2 +1,2 @@
-inmanta-dev-dependencies[module]==1.31.0
+inmanta-dev-dependencies[module]==1.32.0
 netaddr==0.8.0
