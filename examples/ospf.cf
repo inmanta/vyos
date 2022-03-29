@@ -16,7 +16,7 @@ r1 = vyos::Host(
 itf = vyos::Interface(
     host=r1,
     name="eth1",
-    adresses="10.15.1.1/24"
+    address="10.15.1.1/24"
 )
 
 # Enable ospf
