@@ -77,9 +77,9 @@ def test_ospf_redistribute(project, vy_host, console: vymgmt.Router):
         purged={convert_bool(purge)},
     )
     vyos::OspfRedistribute(
-               type="{redistributes}",
-               ospf=ospf1
-            )
+        type="{redistributes}",
+        ospf=ospf1
+    )
         """
         )
 

@@ -12,9 +12,23 @@ r1 = vyos::Host(
 )
 
 
+# Configure the eth1 interface to run ospf on
+itf = vyos::Interface(
+    host=r1,
+    name="eth1",
+    adresses="10.15.1.1/24"
+)
+
+# Enable ospf
 ospf1 = vyos::Ospf(
     area=0,
     network=["10.15.1.0/24"],
     router_id="10.1.1.1",
     host=r1,
+)
+
+# Redistributed all connected networks
+vyos::OspfRedistribute(
+    ospf=ospf1,
+    type="connected",
 )

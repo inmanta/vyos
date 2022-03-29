@@ -15,7 +15,6 @@ r1 = vyos::Host(
 itf = vyos::Interface(
     host=r1,
     name="eth1",
-    address="192.168.5.3/24", # set this IP on the interface
 )
 
 # Configure a vlan sub-interface on vlan 10
