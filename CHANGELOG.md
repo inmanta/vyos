@@ -1,3 +1,6 @@
+# V1.3.6
+- Added examples
+
 # v1.3.4
 - Update inmanta-dev-dependencies package
 
