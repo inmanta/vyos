@@ -35,6 +35,6 @@ def clear(vy_host):
 @fixture
 def vyos_device(clear, vy_host):
     """
-        New, cleaner name for clear fixture, intended to replace clear
+    New, cleaner name for clear fixture, intended to replace clear
     """
     return vy_host
