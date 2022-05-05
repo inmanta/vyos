@@ -24,12 +24,3 @@ a special gift.
 
 We use [pytest](https://docs.pytest.org/en/7.1.x/contents.html) to write our tests. Your PR should include the related test updates or additions, in the appropriate test suite.
 Checkout the existing ones, for instance [interface](/tests/test_interface.py) to get a head start.
-
-#### Commit atomicity
-
-When submitting PRs, it is important that you organize your commits in
-logical units of work. You are free to propose a patch/feature with one or many
-commits, as long as their atomicity is respected. This means that no unrelated
-changes should be included in a commit.
-
-Writing meaningful commit messages will also help the maintainer who is reviewing your PR.
