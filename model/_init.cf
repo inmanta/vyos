@@ -160,6 +160,36 @@ entity Loopback extends ConfigNode:
     ip::cidr address
 end
 
+####################################################################
+
+
+entity NameServer extends ConfigNode:
+    std::ipv4_address address
+end
+
+
+implementation nameserver for NameServer:
+    self.node_name = "system name-server"
+    self.config = vyos::Config(
+        device=self.host.name,
+        node=self.node_name,
+        credential=self.host.credential,
+        config=std::template("vyos/name_server.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+        purged=self.purged,
+    )
+end
+
+index NameServer(host, address)
+
+
+implement NameServer using parents, nameserver
+
+
+####################################################################
+
 entity Masquerade extends ConfigNode:
     string outbound_interface
     string source_address
