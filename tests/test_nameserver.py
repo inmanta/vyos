@@ -25,11 +25,12 @@ def test_nameserver(project, vy_host, clear):
     make_config()
 
     # pre create
-    compare = project.dryrun_resource("vyos::Config")
-    assert "purged" in compare
     assert "system name-server 1.1.1.1" in project.get_resource(
         "vyos::Config"
     ).config.split("\n")
+
+    compare = project.dryrun_resource("vyos::Config")
+    assert "purged" in compare
     assert len(compare) == 1
 
     # create

@@ -169,7 +169,7 @@ end
 
 
 implementation nameserver for NameServer:
-    self.node_name = "system name-server"
+    self.node_name = "system name-server {{ address }}"
     self.config = vyos::Config(
         device=self.host.name,
         node=self.node_name,
@@ -185,7 +185,8 @@ end
 index NameServer(host, address)
 
 
-implement NameServer using parents, nameserver
+# implement NameServer using parents, nameserver
+implement NameServer using nameserver
 
 
 ####################################################################
