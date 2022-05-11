@@ -28,7 +28,16 @@ In order to get started with using this module, we have prepared a bunch of YouT
 
 3. Set up the test environment by following [this guide](https://github.com/inmanta/examples/tree/master/Networking/Vyos).
 
-4. Run the tests:
+4. Make a clean-slate configuration file by connecting to the `VyOS` device and running the following command:
+
+    ```console
+    configure
+    save clear.config
+    ```
+
+    > This `clear.config` file is used in the tests to automatically clear the configuration, avoiding potential conflicts.
+
+5. Run the tests:
 
     ```bash
     export VY_TEST_HOST="10.11.12.100"
