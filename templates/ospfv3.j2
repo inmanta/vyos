@@ -3,12 +3,3 @@ protocols ospfv3 parameters router-id {{ router_id }}
 {% for interface in interfaces -%}
 protocols ospfv3 area {{ area }} interface {{ interface }}
 {% endfor %}
-
-{# {% for redistribute in redistributes %}
-protocols ospfv3 redistribute {{redistribute.type}} metric-type {{redistribute.metric_type}}
-{% if redistribute.route_map -%}
-{{ node_name }} redistribute {{ redistribute.type }} route-map {{ redistribute.route_map }}
-{% endif %}
-{% endfor %}
-
- #}
