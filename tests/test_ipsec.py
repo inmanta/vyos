@@ -28,6 +28,8 @@ def test_ipsec_options(project, vyos):
         """
         )
 
+    make_config()
+
     compare = project.dryrun_resource("vyos::Config")
     assert "purged" in compare
     assert len(compare) == 1
