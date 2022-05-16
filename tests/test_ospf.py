@@ -1,11 +1,11 @@
-import vymgmt
+from conftest import VyosHelper
 
 
 def convert_bool(val):
     return "true" if val else "false"
 
 
-def test_ospf(project, vy_host, console: vymgmt.Router):
+def test_ospf(project, vyos: VyosHelper):
     def make_config(purge=False):
         project.compile(
             f"""
@@ -15,7 +15,7 @@ def test_ospf(project, vy_host, console: vymgmt.Router):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     ospf1 = vyos::Ospf(
         area=0,
@@ -26,13 +26,6 @@ def test_ospf(project, vy_host, console: vymgmt.Router):
     )
         """
         )
-
-    console.configure()
-    console.run_conf_mode_command("load /config/clear.config")
-    out = console.run_conf_mode_command("commit")
-    print(out)
-
-    console.exit(force=True)
 
     make_config()
 
@@ -57,7 +50,7 @@ def test_ospf(project, vy_host, console: vymgmt.Router):
     assert len(compare) == 0
 
 
-def test_ospf_redistribute(project, vy_host, console: vymgmt.Router):
+def test_ospf_redistribute(project, vyos: VyosHelper):
     def make_config(purge=False, redistributes="connected"):
         project.compile(
             f"""
@@ -67,7 +60,7 @@ def test_ospf_redistribute(project, vy_host, console: vymgmt.Router):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     ospf1 = vyos::Ospf(
         area=0,
@@ -82,13 +75,6 @@ def test_ospf_redistribute(project, vy_host, console: vymgmt.Router):
     )
         """
         )
-
-    console.configure()
-    console.run_conf_mode_command("load /config/clear.config")
-    out = console.run_conf_mode_command("commit")
-    print(out)
-
-    console.exit(force=True)
 
     make_config()
 
