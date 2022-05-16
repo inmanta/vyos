@@ -14,7 +14,7 @@ class VyosHelper:
     def console(self) -> vymgmt.Router:
         """Get a console connection to the router, details: https://vymgmt.readthedocs.io/en/latest/"""
         if self._console is None:
-            self._console = vymgmt.Router(vy_host, "vyos", "vyos", 22)
+            self._console = vymgmt.Router(self.router_ip, "vyos", "vyos", 22)
             self._console.login()
         return self._console
 
@@ -23,7 +23,7 @@ class VyosHelper:
             self._console.logout()
 
     def clear(self) -> None:
-        console = vymgmt.Router(vy_host, "vyos", "vyos", 22)
+        console = vymgmt.Router(self.router_ip, "vyos", "vyos", 22)
         console.login()
         out = console.run_op_mode_command(
             "sudo rm /opt/vyatta/etc/config/ipsec.d/rsa-keys/localhost.key /config/ipsec.d/rsa-keys/localhost.key"
