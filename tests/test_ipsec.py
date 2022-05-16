@@ -1,6 +1,3 @@
-import vymgmt
-
-
 def convert_bool(val):
     return "true" if val else "false"
 
