@@ -5,7 +5,7 @@ def convert_bool(val):
     return "true" if val else "false"
 
 
-def test_ipsec_options(project, vy_host, console: vymgmt.Router):
+def test_ipsec_options(project, vyos):
     def make_config(purge=False):
         project.compile(
             f"""
@@ -16,7 +16,7 @@ def test_ipsec_options(project, vy_host, console: vymgmt.Router):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     vyos::vpn::IPSECOptions(
         host=r1,
@@ -27,15 +27,6 @@ def test_ipsec_options(project, vy_host, console: vymgmt.Router):
     )
         """
         )
-
-    console.configure()
-    console.run_conf_mode_command("load /config/clear.config")
-    out = console.run_conf_mode_command("commit")
-    print(out)
-
-    console.exit(force=True)
-
-    make_config()
 
     compare = project.dryrun_resource("vyos::Config")
     assert "purged" in compare

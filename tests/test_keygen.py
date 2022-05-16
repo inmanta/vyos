@@ -5,7 +5,7 @@ def convert_bool(val):
     return "true" if val else "false"
 
 
-def test_keygen(project, vy_host, clear):
+def test_keygen(project, vyos):
     def make_config(purge=False):
         project.compile(
             f"""
@@ -16,7 +16,7 @@ def test_keygen(project, vy_host, clear):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     vyos::vpn::KeyGen(host=r1)
         """

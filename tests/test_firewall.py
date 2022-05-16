@@ -1,7 +1,7 @@
 import inmanta
 
 
-def test_firewall(project, vy_host, clear):
+def test_firewall(project, vy_host, vyos):
     project.compile(
         f"""
     import vyos
@@ -11,7 +11,7 @@ def test_firewall(project, vy_host, clear):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     itf = vyos::Interface(
         host=r1,

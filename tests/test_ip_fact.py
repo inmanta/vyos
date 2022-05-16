@@ -6,7 +6,7 @@ def convert_bool(val):
     return "true" if val else "false"
 
 
-def test_ip_fact(project, vy_host, clear):
+def test_ip_fact(project, vyos):
     def make_config(purge=False):
         project.compile(
             f"""
@@ -17,7 +17,7 @@ def test_ip_fact(project, vy_host, clear):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     itf = vyos::Interface(
         host=r1,
@@ -39,7 +39,7 @@ def test_ip_fact(project, vy_host, clear):
     netaddr.IPNetwork(facts["ip_address"])
 
 
-def test_ip_fact_multi(project, vy_host, clear):
+def test_ip_fact_multi(project, vyos):
     def make_config(purge=False):
         project.compile(
             f"""
@@ -50,7 +50,7 @@ def test_ip_fact_multi(project, vy_host, clear):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     itf = vyos::Interface(
         host=r1,

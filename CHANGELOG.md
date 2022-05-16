@@ -1,3 +1,6 @@
+# V1.3.9
+- Replace cleanup fixture
+
 # V1.3.8
 - Remove pytest.ini and move its logic to pyproject.toml
 

@@ -8,19 +8,19 @@ from pytest import fixture
 class VyosHelper:
     def __init__(self, router_ip: str) -> None:
         self.router_ip: str = router_ip
-        self.console: Optional[vymgmt.Router] = None
+        self._console: Optional[vymgmt.Router] = None
 
     @property
     def console(self) -> vymgmt.Router:
         """Get a console connection to the router, details: https://vymgmt.readthedocs.io/en/latest/"""
-        if self.console is None:
-            self.console = vymgmt.Router(vy_host, "vyos", "vyos", 22)
-            self.console.login()
+        if self._console is None:
+            self._console = vymgmt.Router(vy_host, "vyos", "vyos", 22)
+            self._console.login()
         return self.console
 
     def close(self) -> None:
-        if self.console is not None:
-            self.console.logout()
+        if self._console is not None:
+            self._console.logout()
 
     def clear(self) -> None:
         console = vymgmt.Router(vy_host, "vyos", "vyos", 22)
@@ -47,22 +47,3 @@ def vyos(vy_host) -> VyosHelper:
 @fixture
 def vy_host():
     return os.environ["VY_TEST_HOST"]
-
-
-@fixture
-def console(vyos):
-    return vyos.console
-
-
-@fixture
-def clear(vyos):
-    # Functionality subsumed by vyos
-    pass
-
-
-@fixture
-def vyos_device(vyos, vy_host):
-    """
-    New, cleaner name for clear fixture, intended to replace clear
-    """
-    return vy_host
