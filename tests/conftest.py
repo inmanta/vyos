@@ -16,7 +16,7 @@ class VyosHelper:
         if self._console is None:
             self._console = vymgmt.Router(vy_host, "vyos", "vyos", 22)
             self._console.login()
-        return self.console
+        return self._console
 
     def close(self) -> None:
         if self._console is not None:
