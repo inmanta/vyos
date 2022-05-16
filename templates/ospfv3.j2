@@ -1,0 +1,5 @@
+protocols ospfv3 parameters router-id {{ router_id }}
+
+{% for interface in interfaces -%}
+protocols ospfv3 area {{ area }} interface {{ interface }} 
+{% endfor %}

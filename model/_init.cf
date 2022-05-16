@@ -197,6 +197,37 @@ entity Tunnel extends BaseInterface:
     tunnel_key_t? key=null
 end
 
+
+#####################################################################
+
+index Ospfv3(host)
+
+entity Ospfv3 extends ConfigNode:
+    area area=0
+    string[] interfaces
+    ip::ip router_id
+end
+
+implementation ospfv3 for Ospfv3:
+    self.node_name = "protocols ospfv3"
+    self.config = vyos::Config(
+        device=self.host.name,
+        node=self.node_name,
+        credential=self.host.credential,
+        config=std::template("vyos/ospfv3.j2"),
+        skip_on_connect_error=self.host.skip_on_connect_error,
+        requires=[self.host.requires, self.requires],
+        provides=self.provides,
+        purged=self.purged,
+        purge_on_delete=self.purge_on_delete
+    )
+end
+
+
+implement Ospfv3 using ospfv3
+
+#####################################################################
+
 typedef abrtype_t as string matching self in ["cisco", "ibm", "shortcut", "standard"]
 
 index Ospf(host)
