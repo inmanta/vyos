@@ -5,7 +5,7 @@ def convert_bool(val):
     return "true" if val else "false"
 
 
-def test_static_route(project, vy_host, clear):
+def test_static_route(project, vyos):
     def make_config(purge=False):
         project.compile(
             f"""
@@ -16,7 +16,7 @@ def test_static_route(project, vy_host, clear):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     vyos::StaticRoute(
         host=r1,
@@ -65,8 +65,7 @@ def test_static_route(project, vy_host, clear):
 )
 def test_policy_route(
     project,
-    vy_host,
-    clear,
+    vyos,
     source_a_is_set: bool,
     dest_a_is_set: bool,
     source_p_is_set: bool,
@@ -83,7 +82,7 @@ def test_policy_route(
         name = "lab1",
         user = "vyos",
         password = "vyos",
-        ip = "{vy_host}",
+        ip = "{vyos.router_ip}",
     )
 
     policy = vyos::PolicyRoute(
@@ -158,7 +157,7 @@ def test_policy_route(
     assert len(compare) == 0
 
 
-def test_41_policy_route_purge(project, vy_host, clear) -> None:
+def test_41_policy_route_purge(project, vyos) -> None:
     def make_config(
         purge_iface: bool = False, purge_policy: bool = False, purge_rule: bool = False
     ) -> None:
@@ -170,7 +169,7 @@ def test_41_policy_route_purge(project, vy_host, clear) -> None:
         name = "lab1",
         user = "vyos",
         password = "vyos",
-        ip = "{vy_host}",
+        ip = "{vyos.router_ip}",
     )
 
     iface = vyos::Interface(

@@ -4,7 +4,7 @@ import string
 import inmanta.agent.handler
 
 
-def test_basics(project, clear, vy_host):
+def test_basics(project, vyos):
 
     hostname = "".join(random.choice(string.ascii_letters) for x in range(10))
 
@@ -16,7 +16,7 @@ r1 = vyos::Host(
     name="{hostname}",
     user="vyos",
     password="vyos",
-    ip="{vy_host}"
+    ip="{vyos.router_ip}"
     )
 
 vyos::Hostname(host=r1, name=r1.name)

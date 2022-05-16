@@ -2,7 +2,7 @@ def convert_bool(val):
     return "true" if val else "false"
 
 
-def test_interface_basic(project, vy_host, clear):
+def test_interface_basic(project, vyos):
     def make_config(purge=False):
         project.compile(
             f"""
@@ -12,7 +12,7 @@ def test_interface_basic(project, vy_host, clear):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     itf = vyos::Interface(
         host=r1,
@@ -51,7 +51,7 @@ def test_interface_basic(project, vy_host, clear):
     assert len(compare) == 0
 
 
-def test_interface_and_vif(project, vy_host, clear):
+def test_interface_and_vif(project, vyos):
     def make_config(purge=False):
         project.compile(
             f"""
@@ -61,7 +61,7 @@ def test_interface_and_vif(project, vy_host, clear):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     itf = vyos::Interface(
         host=r1,
@@ -96,7 +96,7 @@ def test_interface_and_vif(project, vy_host, clear):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     itf = vyos::Interface(
         host=r1,
@@ -137,7 +137,7 @@ def test_interface_and_vif(project, vy_host, clear):
     assert len(compare) == 0
 
 
-def test_interface_vif_with_policy_route(project, vy_host, clear):
+def test_interface_vif_with_policy_route(project, vyos):
     project.compile(
         f"""
     import vyos
@@ -146,7 +146,7 @@ def test_interface_vif_with_policy_route(project, vy_host, clear):
         name="lab1",
         user="vyos",
         password="vyos",
-        ip="{vy_host}")
+        ip="{vyos.router_ip}")
 
     itf = vyos::Interface(
         host=r1,

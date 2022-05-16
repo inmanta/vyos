@@ -7,11 +7,11 @@ def load_example(example, ip):
         return fh.read().replace('mgmt_ip = "x.x.x.x"', f'mgmt_ip = "{ip}"')
 
 
-def test_example_interfaces(project, vyos_device):
-    project.compile(load_example("interfaces", vyos_device))
+def test_example_interfaces(project, vyos):
+    project.compile(load_example("interfaces", vyos.router_ip))
     project.deploy_all().assert_all()
 
 
-def test_example_ospf(project, vyos_device):
-    project.compile(load_example("ospf", vyos_device))
+def test_example_ospf(project, vyos):
+    project.compile(load_example("ospf", vyos.router_ip))
     project.deploy_all().assert_all()
