@@ -32,7 +32,7 @@ In order to get started with using this module, we have prepared a bunch of YouT
 
     ```console
     configure
-    save clear.config
+    save /config/clear.config
     ```
 
     > This `clear.config` file is used in the tests to automatically clear the configuration, avoiding potential conflicts.

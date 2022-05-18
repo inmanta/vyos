@@ -8,9 +8,6 @@
 {% elif address -%}
 {{ node_name }} address {{ address }}
 {% endif %}
-{% if bridge_group is defined -%}
-{{ node_name }} parameters ip bridge-group bridge {{ bridge_group.name }}
-{% endif %}
 {% if traffic_policy_out is defined -%}
 {{ node_name }} traffic-policy out {{ traffic_policy_out.name }}
 {% endif %}
