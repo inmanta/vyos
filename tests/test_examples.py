@@ -15,3 +15,7 @@ def test_example_interfaces(project, vyos):
 def test_example_ospf(project, vyos):
     project.compile(load_example("ospf", vyos.router_ip))
     project.deploy_all().assert_all()
+
+def test_example_bridge_gre(project, vyos):
+    project.compile(load_example("bridge_gre", vyos.router_ip))
+    project.deploy_all().assert_all()
