@@ -353,7 +353,7 @@ entity Bridge extends BaseInterface:
     string type="bridge"
 end
 
-BaseInterface.bridge_group [0:1] -- Bridge.interfaces [0:]
+BaseInterface.bridge_group [0:1] -- Bridge.members [0:]
 
 implement Bridge using parents, bridge
 
@@ -367,7 +367,7 @@ implementation bridge for Bridge:
         skip_on_connect_error=self.host.skip_on_connect_error,
         requires=[self.requires, self.host.requires]
     )
-    self.config.provides = self.interfaces
+    self.config.provides = self.members
 end
 
 
