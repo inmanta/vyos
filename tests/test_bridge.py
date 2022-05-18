@@ -22,6 +22,11 @@ def test_interface_in_bridge(project, vyos):
     """,
     )
 
+    eth1 = project.get_resource("vyos::Config", node="interfaces ethernet eth1")
+    br0 = project.get_resource("vyos::Config", node="interfaces bridge br0")
+
+    assert eth1.id in br0.requires
+
     project.deploy_resource("vyos::Config", node="interfaces ethernet eth1")
 
     compare = project.dryrun_resource("vyos::Config", node="interfaces bridge br0")

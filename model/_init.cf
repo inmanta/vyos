@@ -365,9 +365,9 @@ implementation bridge for Bridge:
         credential=self.host.credential,
         config=std::template("vyos/bridge.j2"),
         skip_on_connect_error=self.host.skip_on_connect_error,
-        requires=[self.requires, self.host.requires]
+        requires=[self.requires, self.host.requires, self.members],
+        provides=self.provides,
     )
-    self.config.provides = self.members
 end
 
 
