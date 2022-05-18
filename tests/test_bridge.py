@@ -36,4 +36,3 @@ def test_interface_in_bridge(project, vyos):
 
     compare = project.dryrun_resource("vyos::Config", node="interfaces bridge br0")
     assert not compare
-

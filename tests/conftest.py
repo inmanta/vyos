@@ -1,11 +1,12 @@
-import os
 import logging
+import os
 from typing import Optional
 
 import vymgmt
 from pytest import fixture
 
 LOGGER = logging.getLogger(__name__)
+
 
 class VyosHelper:
     def __init__(self, router_ip: str) -> None:
