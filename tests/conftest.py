@@ -1,9 +1,11 @@
 import os
+import logging
 from typing import Optional
 
 import vymgmt
 from pytest import fixture
 
+LOGGER = logging.getLogger(__name__)
 
 class VyosHelper:
     def __init__(self, router_ip: str) -> None:
@@ -23,6 +25,7 @@ class VyosHelper:
             self._console.logout()
 
     def clear(self) -> None:
+        LOGGER.info("Cleaning Vyos Device")
         console = vymgmt.Router(self.router_ip, "vyos", "vyos", 22)
         console.login()
         out = console.run_op_mode_command(
