@@ -6,7 +6,9 @@ Open-source module to configure [VyOS](https://vyos.io/) network devices.
 
 In order to get started with using this module, we have prepared a bunch of YouTube videos to walk you through the entire process. The links to these videos are mentioned below.
 
-1. Links will be added upon uploading the videos.
+1. [OSPF configuration - Flat model](https://www.youtube.com/watch?v=ak_r9wpBE-Q)
+2. [OSPF configuration - Enhanced model](https://www.youtube.com/watch?v=LBOpezx8UwI)
+3. [Contributing to VyOS module - OSPFv3](https://www.youtube.com/watch?v=4VI65buWdXM)
 
 ## Running tests
 
@@ -46,4 +48,4 @@ In order to get started with using this module, we have prepared a bunch of YouT
 
 ## Contributing
 
-All contributions are welcome by following [this guide](CONTRIBUTING.md).
+All contributions are welcome by following [this guide](CONTRIBUTING.md). We have a [video](https://www.youtube.com/watch?v=4VI65buWdXM) for that as well!
