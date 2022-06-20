@@ -1,3 +1,6 @@
+# V2.0.1
+- Fix VLAN ID type constraint
+
 # V2.0.0
 - Change bridge config from bridge-group to members for vyos>1.2.6
 
