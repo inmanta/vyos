@@ -18,6 +18,7 @@ vyos_12 = std::OS(family=vyos, name="vyos", version=1.2)
 typedef area as number matching self >= 0 and self < 4294967296
 typedef duplex as string matching self == "auto" or self == "half" or self == "full"
 typedef speed as string matching self in ["10", "100", "1000", "2500","10000", "auto"]
+typedef vlan_id as int matching self >= 0 and self < 4095
 
 # General Framework
 entity ConfigItem:
@@ -320,7 +321,7 @@ implement Tunnel using parents, tunnel
 Vif.parent [1] -- Interface
 
 entity Vif extends BaseInterface:
-    net::vlan_id vlan
+    vlan_id vlan
     string type="vif"
     string name=""
 end
