@@ -219,7 +219,7 @@ entity OspfRedistribute:
     redistribute_t type
     ospf_metric_t? metric = null
     ospf_metric_type_t metric_type=2
-    string? route_map=null = null
+    string? route_map = null
 end
 
 OspfRedistribute.ospf [1] -- Ospf.redistributes [0:]
