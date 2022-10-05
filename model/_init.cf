@@ -206,8 +206,8 @@ entity Ospf extends ConfigNode:
     area area=0
     ip::cidr[] network
     ip::ip router_id
-    string[]? passive_interfaces
-    string[]? passive_interface_excludes
+    string[]? passive_interfaces = null
+    string[]? passive_interface_excludes = null
     abrtype_t abrtype="cisco"
 end
 
@@ -217,9 +217,9 @@ typedef ospf_metric_type_t as number matching self in [1, 2]
 
 entity OspfRedistribute:
     redistribute_t type
-    ospf_metric_t? metric
+    ospf_metric_t? metric = null
     ospf_metric_type_t metric_type=2
-    string? route_map=null
+    string? route_map=null = null
 end
 
 OspfRedistribute.ospf [1] -- Ospf.redistributes [0:]
