@@ -1,3 +1,5 @@
+# V3.0.0
+- Remove support for leaving nullable attribute unassigned
 # V2.0.1
 - Fix VLAN ID type constraint
 
