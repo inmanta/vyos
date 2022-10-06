@@ -206,8 +206,8 @@ entity Ospf extends ConfigNode:
     area area=0
     ip::cidr[] network
     ip::ip router_id
-    string[]? passive_interfaces
-    string[]? passive_interface_excludes
+    string[]? passive_interfaces = null
+    string[]? passive_interface_excludes = null
     abrtype_t abrtype="cisco"
 end
 
