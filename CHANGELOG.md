@@ -1,5 +1,5 @@
 # V3.0.0
-- Remove support for leaving nullable attribute unassigned. This changes the behaviour of 'is defined' in Jinja templates. You should now use 'is not none' instead
+- Added `null` defaults to nullable attributes. These attributes can now only be set in the constructor.
 # V2.0.1
 - Fix VLAN ID type constraint
 
