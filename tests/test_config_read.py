@@ -20,7 +20,6 @@ import inmanta.agent.handler
 
 
 def test_basics(project, vyos):
-
     hostname = "".join(random.choice(string.ascii_letters) for x in range(10))
 
     project.compile(

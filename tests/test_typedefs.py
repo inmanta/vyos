@@ -34,7 +34,6 @@ Tester(value="2500")
     )
 
     with pytest.raises(Exception):
-
         project.compile(
             """
     import vyos

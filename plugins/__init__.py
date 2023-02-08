@@ -531,7 +531,6 @@ class IpFactHandler(VyosBaseHandler):
         # lo               127.0.0.1/8                       u/u
         #                  ::1/128
         try:
-
             vyos = self.get_connection(ctx, resource.id.version, resource)
             cmd = "show interfaces"
             interface = resource.interface
