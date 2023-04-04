@@ -1,4 +1,9 @@
 # V3.0.0
+
+## v3.0.4 - ?
+
+
+
 - Added `null` defaults to nullable attributes. These attributes can now only be set in the constructor.
 # V2.0.1
 - Fix VLAN ID type constraint
