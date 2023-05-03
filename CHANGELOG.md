@@ -2,6 +2,7 @@
 
 ## v3.0.4 - ?
 
+- Convert constraints in requirements.txt file
 
 
 - Added `null` defaults to nullable attributes. These attributes can now only be set in the constructor.
