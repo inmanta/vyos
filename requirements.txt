@@ -1,5 +1,5 @@
-vyattaconfparser==0.5.5
-vymgmt==0.1
+vyattaconfparser>=0.5,<1
+vymgmt>=0.1,<1
 
-pexpect==4.8.0
-ptyprocess==0.7.0
+pexpect>=4.8,<5
+ptyprocess>=0.7,<1
