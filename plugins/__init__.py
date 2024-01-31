@@ -19,6 +19,7 @@
     :contact: code@inmanta.com
     :license: Inmanta EULA
 """
+
 import itertools
 import re
 from functools import reduce
