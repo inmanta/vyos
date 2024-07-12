@@ -1,0 +1,5 @@
+include inmanta_plugins/vyos/setup.cfg
+include inmanta_plugins/vyos/py.typed
+recursive-include inmanta_plugins/vyos/model *.cf
+graft inmanta_plugins/vyos/files
+graft inmanta_plugins/vyos/templates
